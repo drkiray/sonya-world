@@ -3,6 +3,8 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // относительные пути — чтобы приложение работало из подпапки GitHub Pages
+  base: './',
   plugins: [
     react(),
     VitePWA({
