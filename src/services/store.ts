@@ -1,0 +1,559 @@
+// ─── Центральный сервис данных и бизнес-логики (Local Demo Mode) ──────────
+// Все операции, влияющие на баланс, атомарны (batch) и идемпотентны
+// (проверка referenceId среди транзакций).
+
+import { idb, uid, todayKey } from './db';
+import {
+  buildDemoPets,
+  buildDemoQuests,
+  buildDemoRewards,
+  buildInitialMeta,
+  buildInitialProfile,
+  DEMO_USER_PETS,
+} from './seed';
+import { ACHIEVEMENTS, checkAchievements } from './achievements';
+import { playSound } from './sound';
+import type {
+  AppMeta,
+  CatalogImportItem,
+  ChildAchievement,
+  CollectionEntry,
+  CollectionStatus,
+  CustomPet,
+  ImportResult,
+  Pet,
+  Profile,
+  Quest,
+  QuestSubmission,
+  Reward,
+  RewardRequest,
+  Transaction,
+  TransactionActor,
+} from '../types';
+
+export interface AppState {
+  ready: boolean;
+  profile: Profile;
+  pets: Pet[];
+  collection: Record<string, CollectionEntry>;
+  quests: Quest[];
+  submissions: QuestSubmission[];
+  rewards: Reward[];
+  rewardRequests: RewardRequest[];
+  transactions: Transaction[];
+  achievements: ChildAchievement[];
+  meta: AppMeta;
+}
+
+const PROFILE_ID = 'main';
+const META_ID = 'main';
+
+let state: AppState = {
+  ready: false,
+  profile: buildInitialProfile(),
+  pets: [],
+  collection: {},
+  quests: [],
+  submissions: [],
+  rewards: [],
+  rewardRequests: [],
+  transactions: [],
+  achievements: [],
+  meta: buildInitialMeta(),
+};
+
+const listeners = new Set<() => void>();
+
+export function subscribe(fn: () => void): () => void {
+  listeners.add(fn);
+  return () => listeners.delete(fn);
+}
+
+export function getState(): AppState {
+  return state;
+}
+
+function setState(patch: Partial<AppState>) {
+  state = { ...state, ...patch };
+  for (const fn of listeners) fn();
+}
+
+export class BizError extends Error {}
+
+async function loadAll(): Promise<AppState> {
+  const [meta, profileRow, pets, entries, quests, submissions, rewards, requests, transactions, achRows] =
+    await Promise.all([
+      idb.get<{ id: string } & AppMeta>('meta', META_ID),
+      idb.get<{ id: string } & Profile>('profile', PROFILE_ID),
+      idb.getAll<Pet>('pets'),
+      idb.getAll<CollectionEntry>('collection'),
+      idb.getAll<Quest>('quests'),
+      idb.getAll<QuestSubmission>('submissions'),
+      idb.getAll<Reward>('rewards'),
+      idb.getAll<RewardRequest>('rewardRequests'),
+      idb.getAll<Transaction>('transactions'),
+      idb.getAll<{ id: string } & ChildAchievement>('achievements'),
+    ]);
+
+  const baseProfile = profileRow ?? { id: PROFILE_ID, ...buildInitialProfile() };
+
+  // Серия входов: +1 день, если вчера был вход; сброс, если пропуск
+  const today = todayKey();
+  let streak = baseProfile.streakDays || 1;
+  let lastLogin = baseProfile.lastLoginDay;
+  if (lastLogin !== today) {
+    const yesterday = todayKey(new Date(Date.now() - 86400000));
+    streak = lastLogin === yesterday ? (baseProfile.streakDays || 0) + 1 : 1;
+    lastLogin = today;
+  }
+  const profile: Profile = { ...baseProfile, streakDays: streak, lastLoginDay: lastLogin };
+
+  const collection: Record<string, CollectionEntry> = {};
+  for (const e of entries) collection[e.petId] = e;
+
+  return {
+    ready: true,
+    profile,
+    pets,
+    collection,
+    quests,
+    submissions,
+    rewards,
+    rewardRequests: requests,
+    transactions,
+    achievements: achRows.map(({ id, ...rest }) => rest),
+    meta: meta ?? { id: META_ID, ...buildInitialMeta() },
+  };
+}
+
+async function persistMeta(meta: AppMeta) {
+  await idb.put('meta', { id: META_ID, ...meta });
+}
+
+async function persistProfile(profile: Profile) {
+  await idb.put('profile', { id: PROFILE_ID, ...profile });
+}
+
+export async function initStore(): Promise<void> {
+  const existing = await idb.getAll('pets');
+  if (existing.length === 0) {
+    await seedDemoData();
+  }
+  setState(await loadAll());
+}
+
+async function seedDemoData(): Promise<void> {
+  const now = new Date().toISOString();
+  const { pets, ownedIds, wantedIds } = buildDemoPets(now);
+  const quests = buildDemoQuests(now);
+  const rewards = buildDemoRewards(now);
+  const meta = { id: META_ID, ...buildInitialMeta() };
+  const profile = { id: PROFILE_ID, ...buildInitialProfile() };
+  const writes: Array<{ store: Parameters<typeof idb.batch>[0][number]['store']; value: { id: string } }> = [
+    { store: 'meta', value: meta },
+    { store: 'profile', value: profile },
+    ...pets.map((p) => ({ store: 'pets' as const, value: p })),
+    ...DEMO_USER_PETS.map((p) => ({ store: 'pets' as const, value: p })),
+    ...ownedIds.map((id) => ({
+      store: 'collection' as const,
+      value: { id, petId: id, status: 'owned' as CollectionStatus, favorite: false, updatedAt: now },
+    })),
+    ...wantedIds.map((id) => ({
+      store: 'collection' as const,
+      value: { id, petId: id, status: 'wanted' as CollectionStatus, favorite: id === 'demo-10', updatedAt: now },
+    })),
+    ...quests.map((q) => ({ store: 'quests' as const, value: q })),
+    ...rewards.map((r) => ({ store: 'rewards' as const, value: r })),
+  ];
+  await idb.batch(writes);
+}
+
+export async function resetDemoData(): Promise<void> {
+  for (const s of ['pets', 'collection', 'quests', 'submissions', 'rewards', 'rewardRequests', 'transactions', 'achievements', 'profile', 'meta'] as const) {
+    await idb.clear(s);
+  }
+  await seedDemoData();
+  setState(await loadAll());
+}
+
+// ─── Коллекция ─────────────────────────────────────────────────────────────
+
+export async function setPetStatus(petId: string, status: CollectionStatus): Promise<void> {
+  const now = new Date().toISOString();
+  const prev = state.collection[petId];
+  const entry: CollectionEntry & { id: string } = {
+    id: petId,
+    petId,
+    status,
+    favorite: prev?.favorite ?? false,
+    updatedAt: now,
+  };
+  await idb.put('collection', entry);
+  setState({ collection: { ...state.collection, [petId]: entry } });
+  await evaluateAchievements();
+}
+
+export async function toggleFavorite(petId: string): Promise<void> {
+  const now = new Date().toISOString();
+  const prev = state.collection[petId];
+  const entry: CollectionEntry & { id: string } = {
+    id: petId,
+    petId,
+    status: prev?.status ?? 'not_found',
+    favorite: !prev?.favorite,
+    updatedAt: now,
+  };
+  await idb.put('collection', entry);
+  setState({ collection: { ...state.collection, [petId]: entry } });
+}
+
+export async function addCustomPet(data: Omit<CustomPet, 'id' | 'createdAt' | 'source' | 'isDemo' | 'catalogOrigin' | 'sourceVerified'>): Promise<Pet> {
+  const pet: CustomPet = {
+    ...data,
+    id: uid(),
+    source: 'custom',
+    isDemo: false,
+    catalogOrigin: null,
+    sourceVerified: true,
+    createdAt: new Date().toISOString(),
+  };
+  await idb.put('pets', pet);
+  const collectionEntry: CollectionEntry & { id: string } = {
+    id: pet.id,
+    petId: pet.id,
+    status: 'owned',
+    favorite: false,
+    updatedAt: pet.createdAt,
+  };
+  await idb.put('collection', collectionEntry);
+  setState({
+    pets: [...state.pets, pet],
+    collection: { ...state.collection, [pet.id]: collectionEntry },
+  });
+  await evaluateAchievements();
+  return pet;
+}
+
+export async function deleteCustomPet(petId: string): Promise<void> {
+  const pet = state.pets.find((p) => p.id === petId);
+  if (!pet || pet.source !== 'custom') throw new BizError('Удалять можно только собственных питомцев');
+  await idb.batch([], [{ store: 'pets', id: petId }, { store: 'collection', id: petId }]);
+  const collection = { ...state.collection };
+  delete collection[petId];
+  setState({ pets: state.pets.filter((p) => p.id !== petId), collection });
+  await evaluateAchievements();
+}
+
+// ─── Импорт каталога ───────────────────────────────────────────────────────
+
+export async function importCatalog(items: CatalogImportItem[]): Promise<ImportResult> {
+  const result: ImportResult = { added: 0, skippedDuplicates: 0, errors: [] };
+  const existingIds = new Set(state.pets.map((p) => p.id));
+  const names = new Set(state.pets.map((p) => p.name.toLowerCase()));
+  const writes: Array<{ store: 'pets'; value: Pet }> = [];
+
+  for (const [i, item] of items.entries()) {
+    if (!item.id || !item.name) {
+      result.errors.push(`Запись ${i + 1}: нет id или названия`);
+      continue;
+    }
+    if (!item.rarity) {
+      result.errors.push(`Запись ${i + 1} (${item.name}): не указана редкость`);
+      continue;
+    }
+    if (existingIds.has(item.id)) {
+      result.skippedDuplicates += 1;
+      continue;
+    }
+    if (names.has(item.name.toLowerCase())) {
+      result.skippedDuplicates += 1;
+      continue;
+    }
+    const pet: Pet = {
+      id: item.id,
+      name: item.name,
+      rarity: item.rarity,
+      category: item.category || 'Без категории',
+      description: item.description || '',
+      imageUrl: item.imageUrl ?? null,
+      artSeed: hashSeed(item.id),
+      source: 'catalog',
+      isDemo: false,
+      catalogOrigin: item.source || 'Steal an Egg',
+      sourceVerified: Boolean(item.sourceVerified),
+      createdAt: new Date().toISOString(),
+    };
+    writes.push({ store: 'pets', value: pet });
+    existingIds.add(item.id);
+    names.add(item.name.toLowerCase());
+    result.added += 1;
+  }
+  if (writes.length) await idb.batch(writes);
+  if (result.added > 0) setState({ pets: [...state.pets, ...writes.map((w) => w.value)] });
+  return result;
+}
+
+function hashSeed(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % 997;
+}
+
+// ─── Квесты (родитель) ─────────────────────────────────────────────────────
+
+export async function saveQuest(quest: Quest): Promise<void> {
+  const isNew = !state.quests.some((q) => q.id === quest.id);
+  await idb.put('quests', quest);
+  setState({ quests: isNew ? [...state.quests, quest] : state.quests.map((q) => (q.id === quest.id ? quest : q)) });
+}
+
+export async function deleteQuest(questId: string): Promise<void> {
+  await idb.delete('quests', questId);
+  setState({ quests: state.quests.filter((q) => q.id !== questId) });
+}
+
+// ─── Квесты (ребёнок): отправка на проверку ────────────────────────────────
+
+export async function submitQuest(questId: string, comment: string, photo: string | null): Promise<QuestSubmission> {
+  const quest = state.quests.find((q) => q.id === questId);
+  if (!quest || !quest.enabled) throw new BizError('Это задание сейчас недоступно');
+  const alreadyPending = state.submissions.some((s) => s.questId === questId && s.status === 'pending');
+  if (alreadyPending) throw new BizError('Это задание уже ждёт проверки у мамы');
+
+  const submission: QuestSubmission = {
+    id: uid(),
+    questId,
+    questTitle: quest.title,
+    status: 'pending',
+    comment,
+    photo,
+    parentComment: null,
+    createdAt: new Date().toISOString(),
+    reviewedAt: null,
+  };
+  await idb.put('submissions', submission);
+  setState({ submissions: [submission, ...state.submissions] });
+  return submission;
+}
+
+// ─── Подтверждение/отклонение задания (родитель) ───────────────────────────
+// Начисление монет происходит ТОЛЬКО здесь, атомарно и с идемпотентностью.
+
+export async function reviewSubmission(submissionId: string, approve: boolean, parentComment?: string): Promise<void> {
+  const sub = state.submissions.find((s) => s.id === submissionId);
+  if (!sub) throw new BizError('Заявка не найдена');
+  if (sub.status !== 'pending') throw new BizError('Заявка уже проверена — повторная проверка невозможна');
+
+  const quest = state.quests.find((q) => q.id === sub.questId);
+  const now = new Date().toISOString();
+  const reviewed: QuestSubmission = {
+    ...sub,
+    status: approve ? 'approved' : 'rejected',
+    parentComment: parentComment ?? null,
+    reviewedAt: now,
+  };
+
+  const writes: Array<{ store: 'submissions' | 'transactions' | 'quests' | 'achievements' | 'profile'; value: { id: string } }> = [
+    { store: 'submissions', value: reviewed },
+  ];
+  const newState: Partial<AppState> = {
+    submissions: state.submissions.map((s) => (s.id === submissionId ? reviewed : s)),
+  };
+
+  if (approve && quest) {
+    // Идемпотентность: одна заявка = одно начисление
+    const refId = `quest-submission:${sub.id}`;
+    if (state.transactions.some((t) => t.referenceId === refId)) {
+      throw new BizError('Награда за эту заявку уже начислена');
+    }
+    const txRecord: Transaction = {
+      id: uid(),
+      amount: quest.rewardCoins,
+      type: 'quest_reward',
+      description: `Квест «${quest.title}»`,
+      referenceId: refId,
+      actor: 'parent',
+      createdAt: now,
+    };
+    const profile: Profile = {
+      ...state.profile,
+      coins: state.profile.coins + quest.rewardCoins,
+      xp: state.profile.xp + quest.rewardXp,
+      level: levelForXp(state.profile.xp + quest.rewardXp),
+    };
+    const questUpdated: Quest = { ...quest, lastCompletedOn: todayKey() };
+    writes.push(
+      { store: 'transactions', value: txRecord },
+      { store: 'profile', value: { id: PROFILE_ID, ...profile } },
+      { store: 'quests', value: questUpdated },
+    );
+    newState.transactions = [txRecord, ...state.transactions];
+    newState.profile = profile;
+    newState.quests = state.quests.map((q) => (q.id === quest.id ? questUpdated : q));
+  }
+
+  await idb.batch(writes);
+  setState(newState);
+  if (approve) playSound('coins');
+  await evaluateAchievements();
+}
+
+// ─── Награды и заявки ──────────────────────────────────────────────────────
+
+export async function saveReward(reward: Reward): Promise<void> {
+  const isNew = !state.rewards.some((r) => r.id === reward.id);
+  await idb.put('rewards', reward);
+  setState({ rewards: isNew ? [...state.rewards, reward] : state.rewards.map((r) => (r.id === reward.id ? reward : r)) });
+}
+
+export async function deleteReward(rewardId: string): Promise<void> {
+  await idb.delete('rewards', rewardId);
+  setState({ rewards: state.rewards.filter((r) => r.id !== rewardId) });
+}
+
+export async function requestReward(rewardId: string): Promise<RewardRequest> {
+  const reward = state.rewards.find((r) => r.id === rewardId);
+  if (!reward || !reward.enabled) throw new BizError('Эта награда сейчас недоступна');
+  const alreadyPending = state.rewardRequests.some((r) => r.rewardId === rewardId && r.status === 'pending');
+  if (alreadyPending) throw new BizError('Заявка на эту награду уже ждёт проверки');
+
+  const request: RewardRequest = {
+    id: uid(),
+    rewardId,
+    rewardTitle: reward.title,
+    cost: reward.cost,
+    status: 'pending',
+    parentComment: null,
+    createdAt: new Date().toISOString(),
+    reviewedAt: null,
+    issuedAt: null,
+  };
+  await idb.put('rewardRequests', request);
+  setState({ rewardRequests: [request, ...state.rewardRequests] });
+  return request;
+}
+
+export async function reviewRewardRequest(requestId: string, approve: boolean, parentComment?: string): Promise<void> {
+  const req = state.rewardRequests.find((r) => r.id === requestId);
+  if (!req) throw new BizError('Заявка не найдена');
+  if (req.status !== 'pending') throw new BizError('Заявка уже проверена');
+
+  const now = new Date().toISOString();
+  const reviewed: RewardRequest = { ...req, status: approve ? 'approved' : 'rejected', parentComment: parentComment ?? null, reviewedAt: now };
+  const writes: Array<{ store: 'rewardRequests' | 'transactions' | 'profile'; value: { id: string } }> = [
+    { store: 'rewardRequests', value: reviewed },
+  ];
+  const newState: Partial<AppState> = {
+    rewardRequests: state.rewardRequests.map((r) => (r.id === requestId ? reviewed : r)),
+  };
+
+  if (approve) {
+    // Списание при одобрении — атомарно, с проверкой баланса и идемпотентностью
+    const refId = `reward-request:${req.id}`;
+    if (state.transactions.some((t) => t.referenceId === refId)) {
+      throw new BizError('Монеты за эту заявку уже списаны');
+    }
+    if (state.profile.coins < req.cost) {
+      throw new BizError(`Недостаточно монет: у Сони ${state.profile.coins}, нужно ${req.cost}`);
+    }
+    const txRecord: Transaction = {
+      id: uid(),
+      amount: -req.cost,
+      type: 'reward_purchase',
+      description: `Награда «${req.rewardTitle}»`,
+      referenceId: refId,
+      actor: 'parent',
+      createdAt: now,
+    };
+    const profile: Profile = { ...state.profile, coins: state.profile.coins - req.cost };
+    writes.push(
+      { store: 'transactions', value: txRecord },
+      { store: 'profile', value: { id: PROFILE_ID, ...profile } },
+    );
+    newState.transactions = [txRecord, ...state.transactions];
+    newState.profile = profile;
+  }
+
+  await idb.batch(writes);
+  setState(newState);
+}
+
+export async function markRewardIssued(requestId: string): Promise<void> {
+  const req = state.rewardRequests.find((r) => r.id === requestId);
+  if (!req) throw new BizError('Заявка не найдена');
+  if (req.status !== 'approved') throw new BizError('Сначала одобрите заявку');
+  const updated: RewardRequest = { ...req, status: 'issued', issuedAt: new Date().toISOString() };
+  await idb.put('rewardRequests', updated);
+  setState({ rewardRequests: state.rewardRequests.map((r) => (r.id === requestId ? updated : r)) });
+}
+
+// ─── Финансы: ручная корректировка (только родитель) ───────────────────────
+
+export async function adjustBalance(amount: number, reason: string): Promise<void> {
+  if (!Number.isFinite(amount) || amount === 0) throw new BizError('Укажите сумму (не ноль)');
+  if (!reason.trim()) throw new BizError('Обязательно укажите причину корректировки');
+  const newBalance = state.profile.coins + amount;
+  if (newBalance < 0) throw new BizError(`Нельзя увести баланс в минус (сейчас ${state.profile.coins} монет)`);
+
+  const txRecord: Transaction = {
+    id: uid(),
+    amount,
+    type: 'manual_adjust',
+    description: reason.trim(),
+    referenceId: `manual:${uid()}`,
+    actor: 'parent',
+    createdAt: new Date().toISOString(),
+  };
+  const profile: Profile = { ...state.profile, coins: newBalance };
+  await idb.batch([
+    { store: 'transactions', value: txRecord },
+    { store: 'profile', value: { id: PROFILE_ID, ...profile } },
+  ]);
+  setState({ transactions: [txRecord, ...state.transactions], profile });
+}
+
+// ─── Профиль ───────────────────────────────────────────────────────────────
+
+export async function updateProfile(patch: Partial<Profile>): Promise<void> {
+  const profile = { ...state.profile, ...patch };
+  await persistProfile(profile);
+  setState({ profile });
+}
+
+export async function verifyPin(pin: string): Promise<boolean> {
+  return pin === state.meta.parentPin;
+}
+
+export async function changePin(newPin: string): Promise<void> {
+  if (!/^\d{4}$/.test(newPin)) throw new BizError('PIN должен состоять из 4 цифр');
+  const meta = { ...state.meta, parentPin: newPin };
+  await persistMeta(meta);
+  setState({ meta });
+}
+
+// ─── Достижения ────────────────────────────────────────────────────────────
+
+export async function evaluateAchievements(): Promise<string[]> {
+  const unlockedIds = new Set(state.achievements.map((a) => a.achievementId));
+  const newly = checkAchievements(state).filter((id) => !unlockedIds.has(id));
+  if (newly.length === 0) return [];
+
+  const now = new Date().toISOString();
+  const rows = newly.map((achievementId) => ({ id: achievementId, achievementId, unlockedAt: now }));
+  await idb.batch(rows.map((value) => ({ store: 'achievements' as const, value })));
+  setState({ achievements: [...state.achievements, ...rows.map(({ id, ...rest }) => rest)] });
+  playSound('achievement');
+  return newly;
+}
+
+export { ACHIEVEMENTS };
+
+export function levelForXp(xp: number): number {
+  return Math.floor(xp / 100) + 1;
+}
+
+export function xpProgress(profile: Profile): { intoLevel: number; needed: number } {
+  return { intoLevel: profile.xp % 100, needed: 100 };
+}
+
+export type { TransactionActor };

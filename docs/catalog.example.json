@@ -1,0 +1,22 @@
+[
+  {
+    "id": "example-001",
+    "name": "Пример питомца — Звёздный зверь",
+    "rarity": "Rare",
+    "category": "Космические",
+    "description": "Пример записи каталога. Замените на настоящие данные игры.",
+    "imageUrl": null,
+    "source": "Steal an Egg",
+    "sourceVerified": false
+  },
+  {
+    "id": "example-002",
+    "name": "Пример питомца — Туманный дракон",
+    "rarity": "Legendary",
+    "category": "Драконы",
+    "description": "Второй пример: дракон, прячущийся в облаках.",
+    "imageUrl": null,
+    "source": "Steal an Egg",
+    "sourceVerified": false
+  }
+]

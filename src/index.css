@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-night font-display text-ink antialiased;
+  margin: 0;
+}
+
+/* Приложение живёт в «телефонной» колонке по центру экрана */
+.app-shell {
+  @apply relative mx-auto flex h-full w-full max-w-[430px] flex-col bg-mist;
+}
+
+@media (min-width: 480px) {
+  .app-shell {
+    @apply my-6 h-auto min-h-[calc(100%-3rem)] rounded-[2rem] shadow-pop overflow-hidden;
+    max-height: 900px;
+  }
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Скрытый скроллбар у горизонтальных лент */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Уважение к reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

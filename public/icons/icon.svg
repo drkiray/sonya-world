@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7655D9"/>
+      <stop offset="1" stop-color="#21183D"/>
+    </linearGradient>
+    <linearGradient id="egg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#5EC8ED"/>
+      <stop offset="1" stop-color="#F38BBF"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="110" fill="url(#bg)"/>
+  <path d="M256 92c-72 0-124 78-124 158 0 84 56 170 124 170s124-86 124-170c0-80-52-158-124-158z" fill="url(#egg)"/>
+  <path d="M200 210c10-14 24-22 40-26" stroke="#fff" stroke-width="18" stroke-linecap="round" fill="none" opacity="0.7"/>
+  <circle cx="228" cy="300" r="14" fill="#21183D"/>
+  <circle cx="286" cy="300" r="14" fill="#21183D"/>
+  <circle cx="233" cy="295" r="5" fill="#fff"/>
+  <circle cx="291" cy="295" r="5" fill="#fff"/>
+  <path d="M240 336c10 10 24 10 34 0" stroke="#21183D" stroke-width="10" stroke-linecap="round" fill="none"/>
+  <path d="M330 130l10 24 24 10-24 10-10 24-10-24-24-10 24-10z" fill="#FFD45C"/>
+</svg>
