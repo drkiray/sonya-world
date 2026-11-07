@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Egg, Heart, Plus, Search } from 'lucide-react';
 import { useAppState } from '../state/AppContext';
-import { PetAvatar, RARITY_COLORS, RARITY_LABELS } from '../components/art';
+import { PetImage, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { Card, Chip, EmptyState, Segmented } from '../components/ui';
 import type { CollectionStatus, Pet } from '../types';
 import { cn } from '../lib/cn';
@@ -157,15 +157,7 @@ function PetCard({ pet }: { pet: Pet }) {
           {entry?.favorite && (
             <Heart size={16} className="absolute right-2.5 top-2.5 fill-rosa text-rosa" />
           )}
-          {pet.imageUrl || (pet as { photo?: string }).photo ? (
-            <img
-              src={(pet as { photo?: string }).photo ?? pet.imageUrl!}
-              alt={pet.name}
-              className="h-24 w-24 rounded-full object-cover"
-            />
-          ) : (
-            <PetAvatar seed={pet.artSeed} rarity={pet.rarity} size={96} silhouette={pet.source === 'catalog' && !owned} />
-          )}
+          <PetImage pet={pet} size={96} silhouette={pet.source === 'catalog' && !owned} />
         </div>
         <div className="p-3">
           <p className="truncate text-sm font-black text-ink">{pet.name}</p>

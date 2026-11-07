@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { useSyncExternalStore } from 'react';
 import { Star } from 'lucide-react';
+import { fireConfetti } from '../components/Confetti';
 import {
   ACHIEVEMENTS,
   evaluateAchievements,
@@ -77,14 +78,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         .filter((d): d is AchievementDef => Boolean(d))
         .filter((d) => !shownAchievements.has(d.id));
       defs.forEach((d) => shownAchievements.add(d.id));
-      if (defs.length) setAchievementQueue((q) => [...q, ...defs]);
+      if (defs.length) {
+        setAchievementQueue((q) => [...q, ...defs]);
+        fireConfetti();
+      }
     }
     prevAchCount.current = state.achievements.length;
   }, [state.achievements]);
 
   // Отслеживаем повышение уровня
   useEffect(() => {
-    if (state.profile.level > prevLevel.current) setLevelUp(state.profile.level);
+    if (state.profile.level > prevLevel.current) {
+      setLevelUp(state.profile.level);
+      fireConfetti(2000);
+    }
     prevLevel.current = state.profile.level;
   }, [state.profile.level]);
 

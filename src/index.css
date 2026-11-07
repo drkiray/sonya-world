@@ -52,3 +52,219 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ─── Idle-анимации персонажей ─────────────────────────────────────────── */
+
+/* дыхание: мягкое расширение-сжатие */
+.pet-idle {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: petBreath 3.4s ease-in-out infinite;
+}
+@keyframes petBreath {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.025, 0.97);
+  }
+}
+
+/* моргание */
+.pet-eyes {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: petBlink 4.6s infinite;
+}
+@keyframes petBlink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.08);
+  }
+  98% {
+    transform: scaleY(1);
+  }
+}
+
+/* крылья */
+.pet-wing-l {
+  transform-box: fill-box;
+  transform-origin: right center;
+  animation: wingL 0.9s ease-in-out infinite;
+}
+.pet-wing-r {
+  transform-box: fill-box;
+  transform-origin: left center;
+  animation: wingR 0.9s ease-in-out infinite;
+}
+@keyframes wingL {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-14deg);
+  }
+}
+@keyframes wingR {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(14deg);
+  }
+}
+
+/* антенны */
+.pet-antenna {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: antenna 2.6s ease-in-out infinite;
+}
+@keyframes antenna {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(7deg);
+  }
+  65% {
+    transform: rotate(-6deg);
+  }
+}
+
+/* аура легендарных/мифических */
+.pet-aura {
+  animation: auraPulse 2.8s ease-in-out infinite;
+}
+@keyframes auraPulse {
+  0%,
+  100% {
+    opacity: 0.12;
+  }
+  50% {
+    opacity: 0.28;
+  }
+}
+
+/* остров: облака, солнце, дверь-портал, звёзды */
+.cloud-slow {
+  animation: cloudDrift 14s ease-in-out infinite;
+}
+.cloud-fast {
+  animation: cloudDrift 9s ease-in-out infinite;
+}
+@keyframes cloudDrift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(22px);
+  }
+}
+.sun-halo {
+  animation: auraPulse 3.6s ease-in-out infinite;
+}
+.twinkle {
+  animation: twinkle 2.4s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+.door-glow {
+  animation: doorGlow 2.2s ease-in-out infinite;
+}
+@keyframes doorGlow {
+  0%,
+  100% {
+    opacity: 0.25;
+  }
+  50% {
+    opacity: 0.75;
+  }
+}
+
+/* яйца */
+.egg-shine {
+  animation: eggShine 3.2s ease-in-out infinite;
+}
+@keyframes eggShine {
+  0%,
+  55%,
+  100% {
+    transform: translateX(0) skewX(-18deg);
+  }
+  75% {
+    transform: translateX(170px) skewX(-18deg);
+  }
+}
+.egg-wobble {
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  animation: eggWobble 0.7s ease-in-out infinite;
+}
+@keyframes eggWobble {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(-5deg);
+  }
+  75% {
+    transform: rotate(5deg);
+  }
+}
+.egg-rays {
+  animation: twinkle 1.4s ease-in-out infinite;
+}
+
+/* парящие награды и иконки квестов */
+.reward-float {
+  animation: floaty 3.8s ease-in-out infinite;
+}
+
+/* вылет «+N монет» у баланса */
+.coin-gain {
+  position: absolute;
+  right: 100%;
+  margin-right: 6px;
+  top: 50%;
+  translate: 0 -50%;
+  white-space: nowrap;
+  color: #4ade80;
+  font-weight: 900;
+  font-size: 13px;
+  animation: coinGain 1.6s ease-out both;
+  pointer-events: none;
+}
+@keyframes coinGain {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-4px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-26px) scale(1);
+  }
+}

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, PawPrint, ScrollText, Sparkles } from 'lucide-react';
 import { useAppState } from '../state/AppContext';
-import { AvatarArt, IslandHero, PetAvatar } from '../components/art';
+import { AvatarArt, IslandHero, PetImage } from '../components/art';
 import { CoinChip, OnlineChip } from '../components/StatusChips';
 import { Button, Card, Chip, ProgressBar, SectionTitle } from '../components/ui';
 import { xpProgress } from '../services/store';
@@ -54,9 +54,8 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-3 backdrop-blur">
             {featuredPet && (
-              <PetAvatar
-                seed={featuredPet.artSeed}
-                rarity={featuredPet.rarity}
+              <PetImage
+                pet={featuredPet}
                 size={56}
                 silhouette={collection[featuredPet.id]?.status !== 'owned'}
                 className="animate-floaty shrink-0"
