@@ -33,10 +33,8 @@ export default function AddPet() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState('');
-  const [rarity, setRarity] = useState<Rarity>('Common');
-  const [category, setCategory] = useState('Мои создания');
+  const [rarity, setRarity] = useState<Rarity>('Обычная');
   const [description, setDescription] = useState('');
-  const [note, setNote] = useState('');
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -50,11 +48,9 @@ export default function AddPet() {
       const pet = await addCustomPet({
         name: name.trim(),
         rarity,
-        category: category.trim() || 'Мои создания',
         description: description.trim() || 'Питомец, придуманный Соней.',
         imageUrl: null,
         artSeed: Math.floor(Math.random() * 1000),
-        note: note.trim(),
         photo,
       });
       toast('Новый питомец поселился в мире!', 'success');
@@ -142,15 +138,6 @@ export default function AddPet() {
           </div>
 
           <label className="block">
-            <span className="text-xs font-black uppercase tracking-wide text-ink/40">Категория</span>
-            <input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="mt-1 w-full rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm font-semibold outline-none focus:border-grape"
-            />
-          </label>
-
-          <label className="block">
             <span className="text-xs font-black uppercase tracking-wide text-ink/40">Описание</span>
             <textarea
               value={description}
@@ -161,16 +148,6 @@ export default function AddPet() {
             />
           </label>
 
-          <label className="block">
-            <span className="text-xs font-black uppercase tracking-wide text-ink/40">Заметка (видна только вам и маме)</span>
-            <textarea
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              rows={2}
-              placeholder="Например: слеплен из голубого пластилина"
-              className="mt-1 w-full resize-none rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm font-semibold outline-none focus:border-grape"
-            />
-          </label>
         </Card>
 
         <Button size="lg" className="w-full" onClick={submit} disabled={busy}>

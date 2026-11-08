@@ -6,29 +6,36 @@
 
 import { useEffect, useState } from 'react';
 import type { Pet, Rarity } from '../types';
+import { RARITIES } from '../types';
 import { getAssetUrl } from '../services/assets';
 import { PREMIUM_PETS } from './PremiumArt';
 import { PREMIUM_EGGS } from './premium/eggs';
 import { PREMIUM_ITEMS, IslandScene, premiumRewardKind } from './premium/items';
 
 export const RARITY_COLORS: Record<Rarity, { main: string; soft: string; text: string; ring: string }> = {
-  Common: { main: '#9AA3B2', soft: '#EDF0F4', text: '#5B6472', ring: '#C9CFD9' },
-  Uncommon: { main: '#4ADE80', soft: '#E7FBEF', text: '#1E7A44', ring: '#A9EFC4' },
-  Rare: { main: '#5EC8ED', soft: '#E6F7FD', text: '#1A6E8C', ring: '#B3E4F4' },
-  Epic: { main: '#7655D9', soft: '#EFEAFB', text: '#4A2FA0', ring: '#C7B6F1' },
-  Legendary: { main: '#F5B917', soft: '#FFF6DB', text: '#8A6100', ring: '#FBE28C' },
-  Mythic: { main: '#F38BBF', soft: '#FDEAF4', text: '#A12E68', ring: '#F7C2DC' },
-  Secret: { main: '#FF6B6B', soft: '#FFE9E9', text: '#8F1D1D', ring: '#FFB3B3' },
+  'Обычная': { main: '#9AA3B2', soft: '#EDF0F4', text: '#5B6472', ring: '#C9CFD9' },
+  'Необычная': { main: '#4ADE80', soft: '#E7FBEF', text: '#1E7A44', ring: '#A9EFC4' },
+  'Редкая': { main: '#5EC8ED', soft: '#E6F7FD', text: '#1A6E8C', ring: '#B3E4F4' },
+  'Эпическая': { main: '#7655D9', soft: '#EFEAFB', text: '#4A2FA0', ring: '#C7B6F1' },
+  'Легендарная': { main: '#F59E0B', soft: '#FEF3C7', text: '#92400E', ring: '#FCD34D' },
+  'Мифическая': { main: '#F38BBF', soft: '#FDEAF4', text: '#A12E68', ring: '#F7C2DC' },
+  'Космическая': { main: '#4F46E5', soft: '#EEF0FE', text: '#312C8E', ring: '#C3C6F7' },
+  'Секретная': { main: '#FF6B6B', soft: '#FFE9E9', text: '#8F1D1D', ring: '#FFB3B3' },
+  'Вечная': { main: '#22D3EE', soft: '#ECFEFF', text: '#0E7490', ring: '#BAF2FA' },
+  'Божественная': { main: '#FDE047', soft: '#FEFCE8', text: '#A16207', ring: '#FEF08A' },
 };
 
 export const RARITY_LABELS: Record<Rarity, string> = {
-  Common: 'Обычный',
-  Uncommon: 'Необычный',
-  Rare: 'Редкий',
-  Epic: 'Эпический',
-  Legendary: 'Легендарный',
-  Mythic: 'Мифический',
-  Secret: 'Секретный',
+  'Обычная': 'Обычная',
+  'Необычная': 'Необычная',
+  'Редкая': 'Редкая',
+  'Эпическая': 'Эпическая',
+  'Легендарная': 'Легендарная',
+  'Мифическая': 'Мифическая',
+  'Космическая': 'Космическая',
+  'Секретная': 'Секретная',
+  'Вечная': 'Вечная',
+  'Божественная': 'Божественная',
 };
 
 /** Детерминированный ГПСЧ */
@@ -75,7 +82,7 @@ interface PetFace {
 function faceFor(seed: number, rarity: Rarity): PetFace {
   const rnd = mulberry32(seed * 2654435761 + 7);
   const palette = BODY_PALETTES[Math.floor(rnd() * BODY_PALETTES.length)];
-  const rareIdx = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Secret'].indexOf(rarity);
+  const rareIdx = RARITIES.indexOf(rarity);
   return {
     body: palette[0],
     accent: palette[1],
@@ -108,6 +115,7 @@ export function PetAvatar({
   className?: string;
 }) {
   const f = faceFor(seed, rarity);
+  const rareIdx = RARITIES.indexOf(rarity);
   const uid = `pet${seed}${silhouette ? 's' : ''}`;
   const body = silhouette ? '#3A3157' : f.body;
   const accent = silhouette ? '#2E2647' : f.accent;
@@ -137,7 +145,7 @@ export function PetAvatar({
       <circle cx="50" cy="50" r="48" fill={`url(#${uid}-bg)`} />
 
       {/* ф aura для высоких редкостей */}
-      {!silhouette && (rarity === 'Legendary' || rarity === 'Mythic' || rarity === 'Secret') && (
+      {!silhouette && rareIdx >= RARITIES.indexOf('Легендарная') && (
         <circle cx="50" cy="52" r="38" fill={RARITY_COLORS[rarity].main} opacity="0.14" className="pet-aura" />
       )}
 

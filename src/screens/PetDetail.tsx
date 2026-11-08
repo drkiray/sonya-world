@@ -93,26 +93,28 @@ export default function PetDetail() {
       </header>
 
       <main className="px-4">
-        <Card className="mt-4 p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-ink/40">Статус в альбоме</p>
-          <div className="mt-2 grid grid-cols-3 gap-2">
-            {STATUS_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                onClick={() => handleStatus(o.value)}
-                className={cn(
-                  'rounded-2xl border-2 px-2 py-2.5 text-xs font-black transition active:scale-95',
-                  status === o.value
-                    ? 'border-grape bg-grape text-white shadow-pop'
-                    : 'border-ink/10 bg-white text-ink/60',
-                )}
-              >
-                {status === o.value && <Check size={13} className="mr-1 inline" />}
-                {o.label}
-              </button>
-            ))}
-          </div>
-        </Card>
+        {pet.source === 'catalog' && (
+          <Card className="mt-4 p-4">
+            <p className="text-xs font-black uppercase tracking-wide text-ink/40">Статус в альбоме</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {STATUS_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => handleStatus(o.value)}
+                  className={cn(
+                    'rounded-2xl border-2 px-2 py-2.5 text-xs font-black transition active:scale-95',
+                    status === o.value
+                      ? 'border-grape bg-grape text-white shadow-pop'
+                      : 'border-ink/10 bg-white text-ink/60',
+                  )}
+                >
+                  {status === o.value && <Check size={13} className="mr-1 inline" />}
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </Card>
+        )}
 
         <Card className="mt-3 p-4">
           <p className="text-xs font-black uppercase tracking-wide text-ink/40">О питомце</p>

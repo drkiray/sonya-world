@@ -105,9 +105,7 @@ export default function Collection() {
           </Link>
         </div>
 
-        {tab === 'catalog' && (
-          <Segmented className="mt-3" options={FILTERS} value={filter} onChange={setFilter} />
-        )}
+        <Segmented className="mt-3" options={FILTERS} value={filter} onChange={setFilter} />
 
         {filtered.length === 0 ? (
           <div className="mt-6">
@@ -139,7 +137,7 @@ export default function Collection() {
 function PetCard({ pet }: { pet: Pet }) {
   const state = useAppState();
   const entry = state.collection[pet.id];
-  const status: CollectionStatus = entry?.status ?? 'not_found';
+  const status: CollectionStatus = pet.source === 'custom' ? 'owned' : entry?.status ?? 'not_found';
   const rc = RARITY_COLORS[pet.rarity];
   const owned = status === 'owned';
 

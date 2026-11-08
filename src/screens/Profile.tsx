@@ -391,7 +391,7 @@ function ImportModal({ open, onClose }: { open: boolean; onClose: () => void }) 
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={8}
-        placeholder='[{"id":"pet-1","name":"Питомец","rarity":"Rare","category":"Animal","description":"...","imageUrl":null,"source":"Steal an Egg","sourceVerified":false}]'
+        placeholder='[{"id":"pet-1","name":"Питомец","rarity":"Редкая","category":"Animal","description":"...","imageUrl":null,"source":"Steal an Egg","sourceVerified":false}]'
         className="mt-3 w-full resize-none rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 font-mono text-xs outline-none focus:border-grape"
       />
       <Button size="lg" className="mt-3 w-full" onClick={run} disabled={busy || !text.trim()}>

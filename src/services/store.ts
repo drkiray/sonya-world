@@ -9,6 +9,7 @@ import {
   buildDemoRewards,
   buildInitialMeta,
   buildInitialProfile,
+  buildSonyaQuests,
   DEMO_USER_PETS,
 } from './seed';
 import { ACHIEVEMENTS, checkAchievements } from './achievements';
@@ -30,6 +31,7 @@ import type {
   Transaction,
   TransactionActor,
 } from '../types';
+import { LEGACY_RARITIES } from '../types';
 
 export interface AppState {
   ready: boolean;
@@ -139,7 +141,26 @@ export async function initStore(): Promise<void> {
   if (existing.length === 0) {
     await seedDemoData();
   }
-  setState(await loadAll());
+  let loaded = await loadAll();
+
+  // Миграция старых английских редкостей → новые русские названия
+  const legacyPets = loaded.pets.filter((p) => LEGACY_RARITIES[p.rarity as string]);
+  if (legacyPets.length > 0) {
+    const migrated = legacyPets.map((p) => ({ ...p, rarity: LEGACY_RARITIES[p.rarity as string] }));
+    await idb.batch(migrated.map((value) => ({ store: 'pets' as const, value })));
+    const byId = new Map(migrated.map((p) => [p.id, p]));
+    loaded = { ...loaded, pets: loaded.pets.map((p) => byId.get(p.id) ?? p) };
+  }
+
+  // Подхват заданий Сони на уже установленных устройствах
+  const now = new Date().toISOString();
+  const missing = buildSonyaQuests(now).filter((q) => !loaded.quests.some((x) => x.id === q.id));
+  if (missing.length > 0) {
+    await idb.batch(missing.map((value) => ({ store: 'quests' as const, value })));
+    loaded = { ...loaded, quests: [...loaded.quests, ...missing] };
+  }
+
+  setState(loaded);
 }
 
 async function seedDemoData(): Promise<void> {
@@ -161,6 +182,10 @@ async function seedDemoData(): Promise<void> {
     ...wantedIds.map((id) => ({
       store: 'collection' as const,
       value: { id, petId: id, status: 'wanted' as CollectionStatus, favorite: id === 'demo-10', updatedAt: now },
+    })),
+    ...DEMO_USER_PETS.map((p) => ({
+      store: 'collection' as const,
+      value: { id: p.id, petId: p.id, status: 'owned' as CollectionStatus, favorite: false, updatedAt: now },
     })),
     ...quests.map((q) => ({ store: 'quests' as const, value: q })),
     ...rewards.map((r) => ({ store: 'rewards' as const, value: r })),
@@ -207,8 +232,12 @@ export async function toggleFavorite(petId: string): Promise<void> {
   setState({ collection: { ...state.collection, [petId]: entry } });
 }
 
-export async function addCustomPet(data: Omit<CustomPet, 'id' | 'createdAt' | 'source' | 'isDemo' | 'catalogOrigin' | 'sourceVerified'>): Promise<Pet> {
+export async function addCustomPet(
+  data: Omit<CustomPet, 'id' | 'createdAt' | 'source' | 'isDemo' | 'catalogOrigin' | 'sourceVerified' | 'category' | 'note'>,
+): Promise<Pet> {
   const pet: CustomPet = {
+    category: 'Есть у меня',
+    note: '',
     ...data,
     id: uid(),
     source: 'custom',

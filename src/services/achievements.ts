@@ -1,5 +1,6 @@
 import type { AppState } from './store';
 import type { AchievementDef } from '../types';
+import { RARITIES } from '../types';
 
 // Оригинальные достижения. icon — ключ из ACHIEVEMENT_ICONS (см. components/art.tsx)
 export const ACHIEVEMENTS: AchievementDef[] = [
@@ -14,14 +15,14 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'streak-7', title: 'Серия из 7 дней', description: 'Заходи в мир 7 дней подряд', icon: 'flame' },
 ];
 
-const RARE_ORDER = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Secret'];
+const RARE_ORDER = RARITIES;
 
 export function checkAchievements(state: AppState): string[] {
   const owned = state.pets.filter((p) => state.collection[p.id]?.status === 'owned');
   const ownedCount = owned.length;
   const wantedCount = Object.values(state.collection).filter((e) => e.status === 'wanted').length;
   const approvedSubs = state.submissions.filter((s) => s.status === 'approved').length;
-  const hasRare = owned.some((p) => RARE_ORDER.indexOf(p.rarity) >= RARE_ORDER.indexOf('Epic'));
+  const hasRare = owned.some((p) => RARE_ORDER.indexOf(p.rarity) >= RARE_ORDER.indexOf('Эпическая'));
 
   const checks: Record<string, boolean> = {
     'first-egg': ownedCount >= 1 || wantedCount >= 1,

@@ -1,5 +1,5 @@
 import type { CatalogImportItem, ImportResult, Rarity } from '../types';
-import { RARITIES } from '../types';
+import { RARITIES, LEGACY_RARITIES } from '../types';
 
 // Валидация JSON-каталога питомцев перед импортом.
 // Ожидаемый формат записи:
@@ -32,14 +32,19 @@ export function parseCatalogJson(text: string): { items: CatalogImportItem[]; er
       errors.push(`Запись ${i + 1}: нет названия (name)`);
       return;
     }
-    if (typeof e.rarity !== 'string' || !RARITIES.includes(e.rarity as Rarity)) {
+    const rawRarity = typeof e.rarity === 'string' ? e.rarity : '';
+    // принимаем новые русские названия и старые английские
+    const rarity = (RARITIES as string[]).includes(rawRarity)
+      ? (rawRarity as Rarity)
+      : LEGACY_RARITIES[rawRarity];
+    if (!rarity) {
       errors.push(`Запись ${i + 1} (${e.name}): редкость должна быть одной из ${RARITIES.join(', ')}`);
       return;
     }
     items.push({
       id: e.id,
       name: e.name.trim(),
-      rarity: e.rarity as Rarity,
+      rarity,
       category: typeof e.category === 'string' ? e.category : 'Без категории',
       description: typeof e.description === 'string' ? e.description : '',
       imageUrl: typeof e.imageUrl === 'string' ? e.imageUrl : null,

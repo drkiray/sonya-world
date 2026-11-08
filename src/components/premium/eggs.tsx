@@ -136,12 +136,57 @@ export function EggSecret({ size, cracked, className }: EggProps) {
   );
 }
 
+/** Космическая — звёздное небо в яйце */
+export function EggCosmic({ size, cracked, className }: EggProps) {
+  return (
+    <EggShell size={size} cracked={cracked} className={className} id="egg-cos" base="#4F46E5" top="#A5B4FC">
+      <g fill="#fff">
+        <circle cx="36" cy="44" r="1.8" className="twinkle" />
+        <circle cx="58" cy="38" r="1.4" className="twinkle" style={{ animationDelay: '0.6s' }} />
+        <circle cx="48" cy="58" r="2" className="twinkle" style={{ animationDelay: '1.1s' }} />
+        <circle cx="64" cy="62" r="1.5" className="twinkle" style={{ animationDelay: '1.6s' }} />
+        <path d="M40 66 l4 -8 4 8z" fill="#C7B6F1" opacity="0.9" />
+      </g>
+      <ellipse cx="50" cy="52" rx="18" ry="10" fill="#312C8E" opacity="0.5" />
+    </EggShell>
+  );
+}
+
+/** Вечная — ледяной кристалл */
+export function EggEternal({ size, cracked, className }: EggProps) {
+  return (
+    <EggShell size={size} cracked={cracked} className={className} id="egg-et" base="#22D3EE" top="#E0FBFF">
+      <g stroke="#fff" strokeWidth="2.4" strokeLinecap="round" opacity="0.85">
+        <path d="M50 36 v20 M42 42 l16 10 M58 42 l-16 10 M44 38 l12 16 M56 38 l-12 16" />
+      </g>
+      <path d="M36 70 l5 -9 5 9z M54 72 l4 -7 4 7z" fill="#BAF2FA" stroke="#0E7490" strokeWidth="1.6" strokeLinejoin="round" />
+    </EggShell>
+  );
+}
+
+/** Божественная — сияющий нимб */
+export function EggDivine({ size, cracked, className }: EggProps) {
+  return (
+    <EggShell size={size} cracked={cracked} className={className} id="egg-dv" base="#FDE047" top="#FFFBD1">
+      <ellipse cx="50" cy="30" rx="20" ry="5" fill="none" stroke="#F59E0B" strokeWidth="3" opacity="0.8" />
+      <g fill="#F59E0B" opacity="0.75">
+        <path d="M38 48 l1.8 4 4 1.8 -4 1.8 -1.8 4 -1.8 -4 -4 -1.8 4 -1.8z" />
+        <path d="M58 62 l1.5 3.4 3.4 1.5 -3.4 1.5 -1.5 3.4 -1.5 -3.4 -3.4 -1.5 3.4 -1.5z" />
+      </g>
+      <path d="M34 44 q16 -8 32 0" stroke="#fff" strokeWidth="3" fill="none" opacity="0.8" strokeLinecap="round" />
+    </EggShell>
+  );
+}
+
 export const PREMIUM_EGGS: Record<Rarity, (p: EggProps) => React.ReactElement> = {
-  Common: EggCommon,
-  Uncommon: EggUncommon,
-  Rare: EggRare,
-  Epic: EggEpic,
-  Legendary: EggLegendary,
-  Mythic: EggMythic,
-  Secret: EggSecret,
+  'Обычная': EggCommon,
+  'Необычная': EggUncommon,
+  'Редкая': EggRare,
+  'Эпическая': EggEpic,
+  'Легендарная': EggLegendary,
+  'Мифическая': EggMythic,
+  'Космическая': EggCosmic,
+  'Секретная': EggSecret,
+  'Вечная': EggEternal,
+  'Божественная': EggDivine,
 };
