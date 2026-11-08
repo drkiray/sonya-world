@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react';
 import type { Pet, Rarity } from '../types';
 import { getAssetUrl } from '../services/assets';
+import { PREMIUM_PETS } from './PremiumArt';
 
 export const RARITY_COLORS: Record<Rarity, { main: string; soft: string; text: string; ring: string }> = {
   Common: { main: '#9AA3B2', soft: '#EDF0F4', text: '#5B6472', ring: '#C9CFD9' },
@@ -289,8 +290,11 @@ function lighten(hex: string): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
-/** Картинка питомца: настоящий ассет, если есть, иначе процедурный арт */
+/** Картинка питомца: ручная премиальная иллюстрация → настоящий ассет → процедурный арт */
 export function PetImage({ pet, size, silhouette, className }: { pet: Pet; size: number; silhouette?: boolean; className?: string }) {
+  const Premium = PREMIUM_PETS[pet.id];
+  if (Premium) return <Premium size={size} silhouette={silhouette} className={className} />;
+
   const asset = useAssetManifest();
   const photo = pet.source === 'custom' ? (pet as { photo?: string }).photo : null;
   const url = pet.imageUrl ?? photo ?? asset(pet.id);
