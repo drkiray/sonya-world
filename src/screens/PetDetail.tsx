@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Check, Heart, Trash2 } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
 import { deleteCustomPet, setPetStatus, toggleFavorite } from '../services/store';
-import { PetImage, RARITY_COLORS, RARITY_LABELS } from '../components/art';
+import { EggArt, PetImage, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { Button, Card, Chip, Modal } from '../components/ui';
 import type { CollectionStatus, CustomPet } from '../types';
 import { cn } from '../lib/cn';
@@ -69,12 +69,18 @@ export default function PetDetail() {
         </button>
 
         <div className="mt-8 animate-floaty">
-          <PetImage
-            pet={pet}
-            size={160}
-            silhouette={pet.source === 'catalog' && status !== 'owned'}
-            className={photo ? 'border-4 border-white shadow-pop' : ''}
-          />
+          {pet.source === 'catalog' && status !== 'owned' ? (
+            <div className="flex justify-center rounded-full bg-white/10 p-3 backdrop-blur">
+              <EggArt rarity={pet.rarity} seed={pet.artSeed} size={150} cracked={status === 'wanted'} />
+            </div>
+          ) : (
+            <PetImage
+              pet={pet}
+              size={160}
+              silhouette={false}
+              className={photo ? 'border-4 border-white shadow-pop' : ''}
+            />
+          )}
         </div>
         <h1 className="mt-3 text-center text-2xl font-black">{pet.name}</h1>
         <div className="mt-2 flex flex-wrap justify-center gap-1.5">

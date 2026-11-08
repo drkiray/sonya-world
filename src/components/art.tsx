@@ -8,6 +8,8 @@ import { useEffect, useState } from 'react';
 import type { Pet, Rarity } from '../types';
 import { getAssetUrl } from '../services/assets';
 import { PREMIUM_PETS } from './PremiumArt';
+import { PREMIUM_EGGS } from './premium/eggs';
+import { PREMIUM_ITEMS, IslandScene, premiumRewardKind } from './premium/items';
 
 export const RARITY_COLORS: Record<Rarity, { main: string; soft: string; text: string; ring: string }> = {
   Common: { main: '#9AA3B2', soft: '#EDF0F4', text: '#5B6472', ring: '#C9CFD9' },
@@ -331,7 +333,11 @@ function useAssetManifest(): (petId: string) => string | null {
   return (petId) => (map && map[petId] ? getAssetUrl(map[petId]) : null);
 }
 
-export function EggArt({ seed, size = 64, cracked = false }: { seed: number; size?: number; cracked?: boolean }) {
+export function EggArt({ seed, size = 64, cracked = false, rarity }: { seed: number; size?: number; cracked?: boolean; rarity?: Rarity }) {
+  if (rarity) {
+    const PremiumEgg = PREMIUM_EGGS[rarity];
+    if (PremiumEgg) return <PremiumEgg size={size} cracked={cracked} />;
+  }
   const rnd = mulberry32(seed * 97);
   const c1 = BODY_PALETTES[Math.floor(rnd() * BODY_PALETTES.length)];
   const spot = rnd() > 0.5;
@@ -377,6 +383,8 @@ export function EggArt({ seed, size = 64, cracked = false }: { seed: number; siz
 }
 
 export function RewardArt({ seed, size = 72 }: { seed: number; size?: number }) {
+  const PremiumItem = PREMIUM_ITEMS[premiumRewardKind(seed)];
+  if (PremiumItem) return <PremiumItem size={size} />;
   const rnd = mulberry32(seed * 31);
   const palette = BODY_PALETTES[Math.floor(rnd() * BODY_PALETTES.length)];
   const kind = Math.floor(rnd() * 3);
@@ -463,81 +471,7 @@ export function QuestArt({ seed, size = 72 }: { seed: number; size?: number }) {
 }
 
 export function IslandHero({ size = 340 }: { size?: number }) {
-  return (
-    <svg width={size} height={size * 0.62} viewBox="0 0 340 210" role="img" aria-label="Остров Сонечки" className="w-full h-auto">
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#5EC8ED" />
-          <stop offset="100%" stopColor="#C9EEF9" />
-        </linearGradient>
-        <linearGradient id="isle" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8BE0C3" />
-          <stop offset="100%" stopColor="#7655D9" />
-        </linearGradient>
-        <radialGradient id="sun" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#FFE9A8" />
-          <stop offset="100%" stopColor="#FFD45C" />
-        </radialGradient>
-      </defs>
-      <rect width="340" height="210" rx="24" fill="url(#sky)" />
-
-      {/* солнце с пульсирующим ореолом */}
-      <circle cx="286" cy="42" r="30" fill="#FFD45C" opacity="0.25" className="sun-halo" />
-      <circle cx="286" cy="42" r="19" fill="url(#sun)" />
-
-      {/* мерцающие звёздочки */}
-      <path d="M60 66 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#FFD45C" className="twinkle" />
-      <path d="M300 96 l2.4 5.6 5.6 2.4 -5.6 2.4 -2.4 5.6 -2.4 -5.6 -5.6 -2.4 5.6 -2.4z" fill="#F38BBF" className="twinkle" style={{ animationDelay: '0.8s' }} />
-      <path d="M130 40 l2 4.6 4.6 2 -4.6 2 -2 4.6 -2 -4.6 -4.6 -2 4.6 -2z" fill="#fff" className="twinkle" style={{ animationDelay: '1.6s' }} />
-
-      {/* облака: два слоя с разной скоростью */}
-      <g className="cloud-slow">
-        <ellipse cx="70" cy="48" rx="26" ry="11" fill="#fff" opacity="0.9" />
-        <ellipse cx="88" cy="42" rx="16" ry="9" fill="#fff" opacity="0.9" />
-      </g>
-      <g className="cloud-fast">
-        <ellipse cx="190" cy="30" rx="20" ry="8" fill="#fff" opacity="0.75" />
-      </g>
-      <g className="cloud-slow" style={{ animationDelay: '2s' }}>
-        <ellipse cx="250" cy="70" rx="16" ry="7" fill="#fff" opacity="0.6" />
-      </g>
-
-      {/* остров */}
-      <path d="M60 118 Q170 62 280 118 Q270 168 170 172 Q70 168 60 118Z" fill="url(#isle)" stroke="#21183D" strokeWidth="3" />
-      <path d="M84 122 Q170 84 256 122 Q230 142 170 144 Q110 142 84 122Z" fill="#F4F1FF" opacity="0.35" />
-
-      {/* домик-портал со светящейся дверью */}
-      <g>
-        <path d="M150 96 L170 70 L190 96 Z" fill="#F38BBF" stroke="#21183D" strokeWidth="3" strokeLinejoin="round" />
-        <rect x="155" y="96" width="30" height="26" rx="6" fill="#7655D9" stroke="#21183D" strokeWidth="3" />
-        <ellipse cx="170" cy="112" rx="8" ry="11" fill="#5EC8ED" stroke="#21183D" strokeWidth="2.5" />
-        <ellipse cx="170" cy="112" rx="8" ry="11" fill="#BDEAF8" className="door-glow" />
-      </g>
-
-      {/* деревья */}
-      <g>
-        <rect x="104" y="100" width="8" height="24" rx="3" fill="#8A5A3B" stroke="#21183D" strokeWidth="2" />
-        <g className="pet-idle">
-          <circle cx="108" cy="92" r="16" fill="#4ADE80" stroke="#21183D" strokeWidth="2.5" />
-          <circle cx="100" cy="84" r="5" fill="#FFD45C" />
-          <circle cx="116" cy="90" r="4" fill="#FFD45C" />
-        </g>
-      </g>
-      <g>
-        <rect x="228" y="106" width="6" height="18" rx="2" fill="#8A5A3B" stroke="#21183D" strokeWidth="1.5" />
-        <circle cx="231" cy="100" r="11" fill="#6FE0B8" stroke="#21183D" strokeWidth="2" />
-      </g>
-
-      {/* кристалл */}
-      <g className="animate-wiggle" style={{ transformOrigin: '245px 105px' }}>
-        <path d="M238 118 L245 92 L252 118 Z" fill="#5EC8ED" stroke="#21183D" strokeWidth="2.5" strokeLinejoin="round" />
-        <path d="M245 92 L245 118" stroke="#fff" strokeWidth="2" opacity="0.7" />
-      </g>
-
-      {/* трава */}
-      <path d="M96 128 q3 -8 6 0 M110 132 q3 -8 6 0 M236 128 q3 -8 6 0" stroke="#3E9E6C" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-    </svg>
-  );
+  return <IslandScene size={size} className="w-full h-auto" />;
 }
 
 export function AvatarArt({ seed, size = 56 }: { seed: number; size?: number }) {
