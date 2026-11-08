@@ -8,9 +8,9 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   { id: 'collector-10', title: 'Коллекционер 10', description: 'Собери 10 питомцев', icon: 'grid' },
   { id: 'collector-25', title: 'Коллекционер 25', description: 'Собери 25 питомцев', icon: 'crown' },
   { id: 'first-rare', title: 'Первый редкий', description: 'Заведи питомца редкости Epic или выше', icon: 'gem' },
-  { id: 'first-quest', title: 'Первое задание', description: 'Выполни первый квест', icon: 'clipboard' },
-  { id: 'quest-5', title: '5 выполненных квестов', description: 'Выполни пять квестов', icon: 'medal' },
-  { id: 'quest-10', title: '10 выполненных квестов', description: 'Выполни десять квестов', icon: 'trophy' },
+  { id: 'first-quest', title: 'Первое задание', description: 'Выполни первое задание', icon: 'clipboard' },
+  { id: 'quest-5', title: '5 выполненных заданий', description: 'Выполни пять заданий', icon: 'medal' },
+  { id: 'quest-10', title: '10 выполненных заданий', description: 'Выполни десять заданий', icon: 'trophy' },
   { id: 'streak-7', title: 'Серия из 7 дней', description: 'Заходи в мир 7 дней подряд', icon: 'flame' },
 ];
 

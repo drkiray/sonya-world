@@ -18,7 +18,7 @@ import {
   subscribe,
   type AppState,
 } from '../services/store';
-import { setSoundEnabled } from '../services/sound';
+import { setSoundEnabled, installClickSound } from '../services/sound';
 import type { AchievementDef } from '../types';
 
 // ─── Глобальное состояние + тосты + очередь достижений ─────────────────────
@@ -60,10 +60,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
   }, []);
 
-  // Звук включается настройкой профиля (по умолчанию выключен)
+  // Звук: синхронизация с настройкой + звук кликов по кнопкам
   useEffect(() => {
     setSoundEnabled(state.profile.soundEnabled);
   }, [state.profile.soundEnabled]);
+
+  useEffect(() => {
+    installClickSound();
+  }, []);
 
   // Отслеживаем новые достижения → показываем анимацию-поздравление
   useEffect(() => {

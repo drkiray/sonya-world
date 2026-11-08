@@ -26,7 +26,7 @@ export default function PetDetail() {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-mist p-6">
         <p className="font-bold text-ink/60">Питомец не найден</p>
-        <Button onClick={() => navigate('/collection')}>Назад в коллекцию</Button>
+        <Button onClick={() => navigate('/collection')}>Назад в альбом</Button>
       </div>
     );
   }
@@ -40,7 +40,7 @@ export default function PetDetail() {
   const handleStatus = async (s: CollectionStatus) => {
     await setPetStatus(pet.id, s);
     toast(
-      s === 'owned' ? 'Питомец добавлен в твою коллекцию!' : s === 'wanted' ? 'Отмечено: очень хочу получить!' : 'Статус обновлён',
+      s === 'owned' ? 'Питомец добавлен в твой альбом!' : s === 'wanted' ? 'Отмечено: очень хочу получить!' : 'Статус обновлён',
       'success',
     );
   };
@@ -88,14 +88,13 @@ export default function PetDetail() {
             {RARITY_LABELS[pet.rarity]}
           </Chip>
           <Chip className="bg-white/15 text-white">{pet.category}</Chip>
-          {pet.isDemo && <Chip className="bg-sun/80 text-night">Demo</Chip>}
           {custom && <Chip className="bg-rosa text-white">Мой питомец</Chip>}
         </div>
       </header>
 
       <main className="px-4">
         <Card className="mt-4 p-4">
-          <p className="text-xs font-black uppercase tracking-wide text-ink/40">Статус в коллекции</p>
+          <p className="text-xs font-black uppercase tracking-wide text-ink/40">Статус в альбоме</p>
           <div className="mt-2 grid grid-cols-3 gap-2">
             {STATUS_OPTIONS.map((o) => (
               <button
@@ -140,7 +139,7 @@ export default function PetDetail() {
       </main>
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Удалить питомца?">
-        <p className="text-sm font-semibold text-ink/70">{pet.name} исчезнет из коллекции навсегда.</p>
+        <p className="text-sm font-semibold text-ink/70">{pet.name} исчезнет из альбома навсегда.</p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Button variant="secondary" onClick={() => setConfirmDelete(false)}>Оставить</Button>
           <Button

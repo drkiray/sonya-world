@@ -64,7 +64,6 @@ export default function ParentQuests() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <p className="font-black text-ink">{q.title}</p>
-                  {q.isDemo && <Chip className="bg-sun/30 px-1.5 text-[10px] text-[#8A6100]">Demo</Chip>}
                   {doneToday && <Chip className="bg-green-100 px-1.5 text-[10px] text-green-700">Сегодня выполнено</Chip>}
                 </div>
                 <p className="text-xs font-semibold text-ink/50">

@@ -60,9 +60,9 @@ export default function Quests() {
   return (
     <div className="flex-1 overflow-y-auto bg-mist pb-4">
       <header className="rounded-b-[2rem] bg-gradient-to-b from-night to-[#35285E] px-4 pb-5 pt-5 text-white">
-        <h1 className="text-2xl font-black">Квесты</h1>
+        <h1 className="text-2xl font-black">Задания</h1>
         <p className="mt-0.5 text-sm font-bold text-white/60">
-          Выполняй задания — мама проверит и выдаст монеты
+          Выполни задание — мама проверит и выдаст монеты
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2 text-center">
           <div className="rounded-2xl bg-white/10 p-2.5">
@@ -104,43 +104,46 @@ function QuestCard({ quest, onDo }: { quest: Quest; onDo: () => void }) {
   const doneToday = quest.lastCompletedOn === todayKey();
 
   return (
-    <Card className={cn('flex gap-3 p-3', pending && 'border-2 border-sky/40')}>
-      <div className="shrink-0 self-center">
-        <QuestArt seed={questArtSeed(quest.id)} size={64} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <p className="mr-auto font-black text-ink">{quest.title}</p>
-          {quest.isDemo && <Chip className="bg-sun/30 text-[#8A6100]">Demo</Chip>}
+    <Card className={cn('overflow-hidden p-3', pending && 'border-2 border-sky/40')}>
+      {/* Верхняя строка: иконка · название · награда */}
+      <div className="flex items-center gap-2.5">
+        <div className="shrink-0">
+          <QuestArt seed={questArtSeed(quest.id)} size={52} />
         </div>
-        <p className="mt-0.5 text-xs font-semibold text-ink/55">{quest.description}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-          <Chip className="bg-grape/10 text-grape">{QUEST_CATEGORY_LABELS[quest.category]}</Chip>
-          <Chip className="bg-ink/5 text-ink/50">{DIFFICULTY_LABELS[quest.difficulty]}</Chip>
-          <Chip className="bg-sun/25 text-[#8A6100]">
-            +{quest.rewardCoins} монет · +{quest.rewardXp} опыта
-          </Chip>
-        </div>
-        {rejected && (
-          <p className="mt-1.5 rounded-xl bg-red-50 px-2 py-1 text-xs font-bold text-red-600">
-            Мама отклонила{rejected.parentComment ? `: «${rejected.parentComment}»` : ''}. Попробуй ещё раз!
-          </p>
-        )}
+        <p className="min-w-0 flex-1 font-black leading-tight text-ink">{quest.title}</p>
+        <Chip className="shrink-0 bg-sun/25 px-2 py-1 text-[#8A6100]">
+          +{quest.rewardCoins}
+        </Chip>
       </div>
-      <div className="flex shrink-0 flex-col justify-center">
-        {pending ? (
-          <Chip className="bg-sky/15 text-sky">
-            <Clock size={12} /> На проверке
-          </Chip>
-        ) : doneToday ? (
-          <Chip className="bg-green-100 text-green-700">
-            <CheckCheck size={12} /> Готово
-          </Chip>
-        ) : (
-          <Button size="sm" onClick={onDo}>
-            <Send size={13} /> Выполнить
-          </Button>
-        )}
+
+      {/* Описание */}
+      <p className="mt-1.5 text-xs font-semibold leading-relaxed text-ink/55">{quest.description}</p>
+
+      {rejected && (
+        <p className="mt-1.5 rounded-xl bg-red-50 px-2 py-1.5 text-xs font-bold text-red-600">
+          Мама отклонила{rejected.parentComment ? `: «${rejected.parentComment}»` : ''}. Попробуй ещё раз!
+        </p>
+      )}
+
+      {/* Нижняя строка: теги слева, действие справа */}
+      <div className="mt-2 flex items-center gap-1.5">
+        <Chip className="bg-grape/10 px-2 py-0.5 text-[10px] text-grape">{QUEST_CATEGORY_LABELS[quest.category]}</Chip>
+        <Chip className="bg-ink/5 px-2 py-0.5 text-[10px] text-ink/50">{DIFFICULTY_LABELS[quest.difficulty]}</Chip>
+        <div className="ml-auto">
+          {pending ? (
+            <Chip className="bg-sky/15 text-sky">
+              <Clock size={12} /> На проверке
+            </Chip>
+          ) : doneToday ? (
+            <Chip className="bg-green-100 text-green-700">
+              <CheckCheck size={12} /> Готово
+            </Chip>
+          ) : (
+            <Button size="sm" onClick={onDo}>
+              <Send size={13} /> Выполнить
+            </Button>
+          )}
+        </div>
       </div>
     </Card>
   );

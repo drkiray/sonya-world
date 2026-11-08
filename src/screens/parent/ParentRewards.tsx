@@ -76,7 +76,6 @@ export default function ParentRewards() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
                 <p className="truncate font-black text-ink">{r.title}</p>
-                {r.isDemo && <Chip className="bg-sun/30 px-1.5 text-[10px] text-[#8A6100]">Demo</Chip>}
               </div>
               <p className="text-xs font-semibold text-ink/50">
                 {REWARD_CATEGORY_LABELS[r.category]} · {r.cost} монет{r.enabled ? '' : ' · отключена'}

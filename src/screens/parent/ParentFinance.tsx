@@ -7,7 +7,7 @@ import type { Transaction } from '../../types';
 import { cn } from '../../lib/cn';
 
 const TYPE_LABELS: Record<Transaction['type'], string> = {
-  quest_reward: 'Награда за квест',
+  quest_reward: 'Награда за задание',
   reward_purchase: 'Покупка награды',
   manual_adjust: 'Ручная корректировка',
   achievement_bonus: 'Бонус достижения',

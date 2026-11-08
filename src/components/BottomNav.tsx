@@ -4,10 +4,10 @@ import { cn } from '../lib/cn';
 
 const ITEMS = [
   { to: '/', label: 'Главная', icon: Home },
-  { to: '/collection', label: 'Коллекция', icon: BookHeart },
-  { to: '/quests', label: 'Квесты', icon: ScrollText },
+  { to: '/collection', label: 'Альбом', icon: BookHeart },
+  { to: '/quests', label: 'Задания', icon: ScrollText },
   { to: '/shop', label: 'Магазин', icon: ShoppingBag },
-  { to: '/profile', label: 'Профиль', icon: UserRound },
+  { to: '/profile', label: 'Это я!', icon: UserRound },
 ];
 
 export function BottomNav() {

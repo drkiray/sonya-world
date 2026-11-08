@@ -45,7 +45,7 @@ export default function ParentOverview() {
       )}
 
       <div className="grid grid-cols-2 gap-2">
-        <MiniStat icon={PawPrint} label="Питомцев в коллекции" value={owned} />
+        <MiniStat icon={PawPrint} label="Питомцев в альбоме" value={owned} />
         <MiniStat icon={ScrollText} label="Квестов выполнено" value={approvedCount} />
         <MiniStat icon={Package} label="Наград выдано" value={issuedCount} />
         <MiniStat icon={Coins} label="Достижений открыто" value={state.achievements.length} />

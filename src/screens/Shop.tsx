@@ -107,7 +107,6 @@ function RewardCard({ reward, onPick }: { reward: Reward; onPick: () => void }) 
       <div className="flex flex-1 flex-col p-3">
         <div className="flex items-start justify-between gap-1">
           <p className="text-sm font-black leading-tight text-ink">{reward.title}</p>
-          {reward.isDemo && <Chip className="shrink-0 bg-sun/30 px-1.5 text-[#8A6100]">Demo</Chip>}
         </div>
         <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold text-ink/50">{reward.description}</p>
         <div className="mt-auto flex items-center justify-between pt-2">
@@ -178,7 +177,7 @@ function ExchangeModal({ reward, onClose }: { reward: Reward | null; onClose: ()
         </div>
         {!enough ? (
           <>
-            <p className="mt-2 text-xs font-bold text-red-500">Не хватает {missing} монет. Выполни ещё квестов!</p>
+            <p className="mt-2 text-xs font-bold text-red-500">Не хватает {missing} монет. Выполни ещё заданий!</p>
             <ProgressBar value={coins} max={reward.cost} className="mt-1.5" gradient={false} />
           </>
         ) : (

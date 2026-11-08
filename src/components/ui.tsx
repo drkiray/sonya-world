@@ -118,14 +118,6 @@ export function Modal({
   );
 }
 
-export function DemoTag() {
-  return (
-    <Chip className="bg-sun/30 text-[#8A6100] border border-sun">
-      Demo
-    </Chip>
-  );
-}
-
 export function Segmented<T extends string>({
   options,
   value,

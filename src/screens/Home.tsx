@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, PawPrint, ScrollText, Sparkles } from 'lucide-react';
 import { useAppState } from '../state/AppContext';
-import { AvatarArt, IslandHero, PetImage } from '../components/art';
-import { CoinChip, OnlineChip } from '../components/StatusChips';
+import { ChildAvatar, IslandHero, PetImage } from '../components/art';
+import { CoinChip } from '../components/StatusChips';
 import { Button, Card, Chip, ProgressBar, SectionTitle } from '../components/ui';
 import { xpProgress } from '../services/store';
 
@@ -27,16 +27,13 @@ export default function Home() {
       <header className="rounded-b-[2rem] bg-gradient-to-b from-night to-[#35285E] px-4 pb-6 pt-5 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <AvatarArt seed={profile.avatarSeed} size={48} />
+            <ChildAvatar photo={profile.avatarPhoto} seed={profile.avatarSeed} size={48} />
             <div>
               <p className="text-[11px] font-bold uppercase tracking-widest text-sun">Мир Сонечки</p>
               <h1 className="text-xl font-black leading-tight">Привет, {profile.childName}!</h1>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1.5">
-            <CoinChip />
-            <OnlineChip />
-          </div>
+          <CoinChip />
         </div>
 
         {/* Игровой остров */}
@@ -74,7 +71,7 @@ export default function Home() {
       </header>
 
       <main className="px-4">
-        {/* Прогресс коллекции */}
+        {/* Прогресс альбома */}
         <SectionTitle
           action={
             <Link to="/collection" className="flex items-center gap-1 text-sm font-bold text-grape">
@@ -82,7 +79,7 @@ export default function Home() {
             </Link>
           }
         >
-          Прогресс коллекции
+          Прогресс альбома
         </SectionTitle>
         <Card className="p-4">
           <div className="flex items-center justify-between text-sm font-bold">
@@ -92,20 +89,20 @@ export default function Home() {
           <ProgressBar value={ownedCatalog.length} max={catalogPets.length} className="mt-2" />
           <p className="mt-2 text-xs font-semibold text-ink/50">
             {progressPct < 25 && 'Впереди ещё много удивительных питомцев!'}
-            {progressPct >= 25 && progressPct < 60 && 'Отличный темп, коллекция растёт!'}
+            {progressPct >= 25 && progressPct < 60 && 'Отличный темп, альбом растёт!'}
             {progressPct >= 60 && 'Почти все питомцы найдены — ты звезда!'}
           </p>
         </Card>
 
-        {/* Активный квест */}
+        {/* Активное задание */}
         <SectionTitle
           action={
             <Link to="/quests" className="flex items-center gap-1 text-sm font-bold text-grape">
-              Все квесты <ArrowRight size={15} />
+              Все задания <ArrowRight size={15} />
             </Link>
           }
         >
-          Квест дня
+          Задание дня
         </SectionTitle>
         {activeQuest ? (
           <Card className="flex items-center gap-3 p-4">
@@ -120,7 +117,7 @@ export default function Home() {
           </Card>
         ) : (
           <Card className="p-4 text-center text-sm font-bold text-ink/50">
-            Все задания выполнены или ждут проверки у мамы. Загляни позже!
+            Все задания уже выполнены или ждут проверки у мамы. Загляни позже!
           </Card>
         )}
         {pendingCount > 0 && (
@@ -141,7 +138,7 @@ export default function Home() {
         </SectionTitle>
         {lastAchievements.length === 0 ? (
           <Card className="p-4 text-sm font-semibold text-ink/50">
-            Выполняй квесты и собирай питомцев — достижения найдут тебя сами!
+            Выполняй задания и собирай питомцев — достижения найдут тебя сами!
           </Card>
         ) : (
           <div className="flex gap-2 overflow-x-auto no-scrollbar">
@@ -158,7 +155,7 @@ export default function Home() {
 
         <Link to="/collection" className="mt-6 block">
           <Button size="lg" className="w-full">
-            <PawPrint size={20} /> Моя коллекция
+            <PawPrint size={20} /> Мой альбом
           </Button>
         </Link>
       </main>
@@ -174,8 +171,8 @@ function achievementsLabel(id: string): string {
     'collector-25': 'Коллекционер 25',
     'first-rare': 'Первый редкий',
     'first-quest': 'Первое задание',
-    'quest-5': '5 квестов',
-    'quest-10': '10 квестов',
+    'quest-5': '5 заданий',
+    'quest-10': '10 заданий',
     'streak-7': 'Серия 7 дней',
   };
   return map[id] ?? id;

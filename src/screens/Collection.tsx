@@ -56,7 +56,7 @@ export default function Collection() {
   return (
     <div className="flex-1 overflow-y-auto bg-mist pb-4">
       <header className="rounded-b-[2rem] bg-gradient-to-b from-night to-[#35285E] px-4 pb-5 pt-5 text-white">
-        <h1 className="text-2xl font-black">Коллекция</h1>
+        <h1 className="text-2xl font-black">Альбом</h1>
         <p className="mt-0.5 text-sm font-bold text-white/60">Энциклопедия питомцев Сони</p>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
@@ -70,7 +70,7 @@ export default function Collection() {
           </div>
           <div className="rounded-2xl bg-white/10 p-2.5">
             <p className="text-xl font-black text-rosa">{pct}%</p>
-            <p className="text-[10px] font-bold uppercase text-white/60">коллекция</p>
+            <p className="text-[10px] font-bold uppercase text-white/60">альбом</p>
           </div>
         </div>
 
@@ -107,13 +107,6 @@ export default function Collection() {
 
         {tab === 'catalog' && (
           <Segmented className="mt-3" options={FILTERS} value={filter} onChange={setFilter} />
-        )}
-
-        {tab === 'catalog' && filter === 'all' && !query && (
-          <p className="mt-3 px-1 text-xs font-semibold text-ink/50">
-            Каталог-заглушка с демонстрационными существами. Настоящий каталог игры можно добавить
-            в профиле через импорт JSON.
-          </p>
         )}
 
         {filtered.length === 0 ? (
@@ -165,7 +158,6 @@ function PetCard({ pet }: { pet: Pet }) {
             <Chip className={cn('border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
               {RARITY_LABELS[pet.rarity]}
             </Chip>
-            {pet.isDemo && <Chip className="bg-sun/30 text-[#8A6100]">Demo</Chip>}
           </div>
           <p className={cn('mt-1.5 text-[11px] font-bold', status === 'owned' ? 'text-green-600' : status === 'wanted' ? 'text-rosa' : 'text-ink/40')}>
             {STATUS_LABELS[status]}

@@ -474,22 +474,45 @@ export function IslandHero({ size = 340 }: { size?: number }) {
   return <IslandScene size={size} className="w-full h-auto" />;
 }
 
-export function AvatarArt({ seed, size = 56 }: { seed: number; size?: number }) {
-  const rnd = mulberry32(seed * 7);
-  const hair = ['#5A3E2B', '#2E2647', '#8A5A3B'][Math.floor(rnd() * 3)];
+export function AvatarArt({ seed, size = 56, className }: { seed: number; size?: number; className?: string }) {
+  const rnd = mulberry32(seed * 7 + 3);
+  const hair = ['#5A3E2B', '#2E2140', '#8A5A3B', '#4A3687', '#B9477E'][Math.floor(rnd() * 5)];
+  const accessory = Math.floor(rnd() * 3); // 0 нет, 1 звёздочка, 2 бантик
+  const bowColor = ['#FFD45C', '#F38BBF', '#5EC8ED'][Math.floor(rnd() * 3)];
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label="Аватар Сони">
+    <svg width={size} height={size} viewBox="0 0 100 100" role="img" aria-label="Аватар Сони" className={className}>
       <circle cx="50" cy="50" r="48" fill="#FDEAF4" />
       <circle cx="50" cy="58" r="22" fill="#FFD9C4" stroke="#21183D" strokeWidth="2.5" />
       <path d="M26 56 Q24 22 50 20 Q76 22 74 56 Q70 40 50 40 Q30 40 26 56Z" fill={hair} stroke="#21183D" strokeWidth="2.5" />
+      {/* чёлка */}
+      <path d="M36 42 Q44 34 52 40 Q46 42 44 48 Q40 44 36 42Z" fill={hair} />
       <g className="pet-eyes">
         <circle cx="42" cy="58" r="3" fill="#21183D" />
         <circle cx="58" cy="58" r="3" fill="#21183D" />
+        <circle cx="43.2" cy="56.8" r="1" fill="#fff" />
+        <circle cx="59.2" cy="56.8" r="1" fill="#fff" />
       </g>
       <circle cx="36" cy="64" r="3.5" fill="#F38BBF" opacity="0.6" />
       <circle cx="64" cy="64" r="3.5" fill="#F38BBF" opacity="0.6" />
       <path d="M45 67 Q50 71 55 67" stroke="#21183D" strokeWidth="2" fill="none" strokeLinecap="round" />
-      <path d="M34 34 l4 -8 4 6" stroke="#FFD45C" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      {accessory === 1 && (
+        <path d="M64 32 l2 4.4 4.4 2 -4.4 2 -2 4.4 -2 -4.4 -4.4 -2 4.4 -2z" fill="#FFD45C" stroke="#21183D" strokeWidth="1.6" strokeLinejoin="round" />
+      )}
+      {accessory === 2 && (
+        <g transform="translate(34 32)">
+          <path d="M0 0 L-8 -5 L-8 5 Z" fill={bowColor} stroke="#21183D" strokeWidth="1.6" strokeLinejoin="round" />
+          <path d="M0 0 L8 -5 L8 5 Z" fill={bowColor} stroke="#21183D" strokeWidth="1.6" strokeLinejoin="round" />
+          <circle r="2.6" fill="#fff" stroke="#21183D" strokeWidth="1.4" />
+        </g>
+      )}
     </svg>
   );
+}
+
+/** Аватар ребёнка: собственное фото либо выбранный персонаж из набора */
+export function ChildAvatar({ photo, seed, size = 56, className }: { photo?: string | null; seed: number; size?: number; className?: string }) {
+  if (photo) {
+    return <img src={photo} alt="Аватар" width={size} height={size} className={`rounded-full object-cover ${className ?? ''}`} />;
+  }
+  return <AvatarArt seed={seed} size={size} className={className} />;
 }

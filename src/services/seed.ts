@@ -75,8 +75,8 @@ export const DEMO_USER_PETS: CustomPet[] = [
 
 export function buildDemoQuests(now: string): Quest[] {
   return [
-    { id: 'quest-demo-01', title: 'Найди нового питомца', description: 'Открой коллекцию и найди питомца, которого ещё нет у Сони. Расскажи, что он умеет.', category: 'daily', difficulty: 'easy', rewardCoins: 5, rewardXp: 5, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
-    { id: 'quest-demo-02', title: 'Добавь питомца в коллекцию', description: 'Слепи, нарисуй или придумай своего питомца и добавь его через форму «Мой питомец».', category: 'daily', difficulty: 'medium', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-demo-01', title: 'Найди нового питомца', description: 'Открой альбом и найди питомца, которого ещё нет у Сони. Расскажи, что он умеет.', category: 'daily', difficulty: 'easy', rewardCoins: 5, rewardXp: 5, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-demo-02', title: 'Добавь питомца в альбом', description: 'Слепи, нарисуй или придумай своего питомца и добавь его через форму «Мой питомец».', category: 'daily', difficulty: 'medium', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
     { id: 'quest-demo-03', title: 'Найди питомца редкости Epic или выше', description: 'Посмотри в энциклопедии, каких редких питомцев можно отыскать, и напиши, кого хочешь поймать.', category: 'special', difficulty: 'hard', rewardCoins: 20, rewardXp: 20, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
     { id: 'quest-demo-04', title: 'Нарисуй собственное яйцо', description: 'Придумай и нарисуй яйцо будущего питомца. Сфотографируй рисунок и прикрепи к заданию.', category: 'creative', difficulty: 'medium', rewardCoins: 15, rewardXp: 15, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
     { id: 'quest-demo-05', title: 'Придумай историю питомца', description: 'Выбери любимого питомца и расскажи, откуда он прилетел и чем любит заниматься.', category: 'family', difficulty: 'easy', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
@@ -102,7 +102,8 @@ export function buildInitialProfile(): Profile {
     createdAt: new Date().toISOString(),
     streakDays: 1,
     lastLoginDay: todayKey(),
-    soundEnabled: false,
+    soundEnabled: true,
+    avatarPhoto: null,
   };
 }
 

@@ -182,6 +182,8 @@ export interface Profile {
   streakDays: number;
   lastLoginDay: string | null;
   soundEnabled: boolean;
+  /** Собственная фотография-аватар (dataURL), выбранная в профиле */
+  avatarPhoto?: string | null;
 }
 
 export interface AppMeta {
