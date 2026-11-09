@@ -1,18 +1,33 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Check, Heart, Trash2 } from 'lucide-react';
+import { ArrowLeft, Egg as EggIcon, Heart, Hourglass, Sparkles, Trash2 } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
-import { deleteCustomPet, setPetStatus, toggleFavorite } from '../services/store';
-import { EggArt, PetImage, RARITY_COLORS, RARITY_LABELS } from '../components/art';
-import { Button, Card, Chip, Modal } from '../components/ui';
-import type { CollectionStatus, CustomPet } from '../types';
+import { deleteCustomPet, EGG_GROW_MS, petPhase, startGrowing, toggleFavorite } from '../services/store';
+import { EggArt, PetImage, petHabits, petStats, RARITY_COLORS, RARITY_LABELS } from '../components/art';
+import { Button, Card, Chip, Modal, ProgressBar } from '../components/ui';
+import type { CustomPet, Pet } from '../types';
 import { cn } from '../lib/cn';
 
-const STATUS_OPTIONS: Array<{ value: CollectionStatus; label: string }> = [
-  { value: 'not_found', label: 'Не найден' },
-  { value: 'wanted', label: 'Хочу получить' },
-  { value: 'owned', label: 'Есть у меня' },
-];
+function formatDuration(ms: number): string {
+  const min = Math.round(ms / 60000);
+  if (min < 60) return `${min} мин`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `${h} ч`;
+  return `${Math.round(h / 24)} дн`;
+}
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return 'почти вылупилось…';
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (d > 0) return `${d} дн ${h} ч`;
+  if (h > 0) return `${h} ч ${m} мин`;
+  if (m > 0) return `${m} мин ${sec} сек`;
+  return `${sec} сек`;
+}
 
 export default function PetDetail() {
   const { id } = useParams();
@@ -20,8 +35,19 @@ export default function PetDetail() {
   const { toast } = useUi();
   const state = useAppState();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [, setTick] = useState(0);
 
   const pet = state.pets.find((p) => p.id === id);
+
+  // Тикаем каждую секунду, пока яйцо растёт, чтобы обновлять таймер
+  const entry = pet ? state.collection[pet.id] : undefined;
+  const phase = pet ? petPhase(pet, entry) : 'unknown';
+  useEffect(() => {
+    if (phase !== 'growing') return;
+    const t = setInterval(() => setTick((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, [phase]);
+
   if (!pet) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 bg-mist p-6">
@@ -31,30 +57,34 @@ export default function PetDetail() {
     );
   }
 
-  const entry = state.collection[pet.id];
-  const status: CollectionStatus = entry?.status ?? 'not_found';
   const rc = RARITY_COLORS[pet.rarity];
   const custom = pet.source === 'custom' ? (pet as CustomPet) : null;
   const photo = custom?.photo ?? pet.imageUrl;
+  const stats = petStats(pet.artSeed);
+  const habits = petHabits(pet.artSeed);
+  const revealed = phase === 'owned';
 
-  const handleStatus = async (s: CollectionStatus) => {
-    await setPetStatus(pet.id, s);
-    toast(
-      s === 'owned' ? 'Питомец добавлен в твой альбом!' : s === 'wanted' ? 'Отмечено: очень хочу получить!' : 'Статус обновлён',
-      'success',
-    );
+  const hatchAt = entry?.hatchAt ? Date.parse(entry.hatchAt) : 0;
+  const total = EGG_GROW_MS[pet.rarity];
+  const remaining = phase === 'growing' ? Math.max(0, hatchAt - Date.now()) : 0;
+  const progress = phase === 'growing' ? 1 - remaining / total : 0;
+
+  const grow = async () => {
+    try {
+      await startGrowing(pet.id);
+      toast('Яйцо растёт! Загляни позже.', 'success');
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Не получилось', 'error');
+    }
   };
 
   return (
     <div className="flex-1 overflow-y-auto bg-mist pb-6">
-      <header className="relative flex flex-col items-center rounded-b-[2.5rem] bg-gradient-to-b from-night to-[#35285E] px-4 pb-6 pt-4 text-white"
+      <header
+        className="relative flex flex-col items-center rounded-b-[2.5rem] px-4 pb-6 pt-4 text-white"
         style={{ background: `linear-gradient(180deg, #21183D 0%, ${rc.main}33 100%), linear-gradient(180deg, #21183D, #35285E)` }}
       >
-        <button
-          onClick={() => navigate(-1)}
-          className="absolute left-4 top-4 rounded-full bg-white/15 p-2 backdrop-blur"
-          aria-label="Назад"
-        >
+        <button onClick={() => navigate(-1)} className="absolute left-4 top-4 rounded-full bg-white/15 p-2" aria-label="Назад">
           <ArrowLeft size={18} />
         </button>
         <button
@@ -69,20 +99,36 @@ export default function PetDetail() {
         </button>
 
         <div className="mt-8 animate-floaty">
-          {pet.source === 'catalog' && status !== 'owned' ? (
-            <div className="flex justify-center rounded-full bg-white/10 p-3 backdrop-blur">
-              <EggArt rarity={pet.rarity} seed={pet.artSeed} size={150} cracked={status === 'wanted'} />
+          {phase === 'unknown' && (
+            <div className="rounded-full bg-white/10 p-3 backdrop-blur" style={{ filter: 'none' }}>
+              <div style={{ filter: 'brightness(0.32) saturate(0.45)' }}>
+                <EggArt rarity={pet.rarity} seed={pet.artSeed} size={150} />
+              </div>
             </div>
-          ) : (
-            <PetImage
-              pet={pet}
-              size={160}
-              silhouette={false}
-              className={photo ? 'border-4 border-white shadow-pop' : ''}
-            />
           )}
+          {phase === 'egg' && (
+            <div className="rounded-full bg-white/10 p-3 backdrop-blur">
+              <EggArt rarity={pet.rarity} seed={pet.artSeed} size={150} />
+            </div>
+          )}
+          {phase === 'growing' && (
+            <div className="rounded-full bg-white/10 p-3 backdrop-blur">
+              <div className="egg-wobble inline-block">
+                <EggArt rarity={pet.rarity} seed={pet.artSeed} size={150} />
+              </div>
+            </div>
+          )}
+          {revealed &&
+            (photo ? (
+              <img src={photo} alt={pet.name} className="h-40 w-40 rounded-full border-4 border-white object-cover shadow-pop" />
+            ) : (
+              <PetImage pet={pet} size={160} />
+            ))}
         </div>
-        <h1 className="mt-3 text-center text-2xl font-black">{pet.name}</h1>
+
+        <h1 className="mt-3 text-center text-2xl font-black">
+          {phase === 'unknown' ? 'Неизвестное существо' : pet.name}
+        </h1>
         <div className="mt-2 flex flex-wrap justify-center gap-1.5">
           <Chip className="border" style={{ background: rc.soft, color: rc.text, borderColor: rc.ring }}>
             {RARITY_LABELS[pet.rarity]}
@@ -90,36 +136,51 @@ export default function PetDetail() {
           <Chip className="bg-white/15 text-white">{pet.category}</Chip>
           {custom && <Chip className="bg-rosa text-white">Мой питомец</Chip>}
         </div>
+
+        {/* Прогресс роста яйца */}
+        {phase === 'growing' && (
+          <div className="mt-4 w-full max-w-xs rounded-2xl bg-white/10 p-3 backdrop-blur">
+            <p className="flex items-center justify-center gap-1.5 text-xs font-black uppercase tracking-wide text-sky">
+              <Hourglass size={13} /> Яйцо растёт… {formatCountdown(remaining)}
+            </p>
+            <ProgressBar value={progress * 100} max={100} className="mt-2 h-2.5 bg-white/15" gradient={false} />
+          </div>
+        )}
       </header>
 
       <main className="px-4">
-        {pet.source === 'catalog' && (
-          <Card className="mt-4 p-4">
-            <p className="text-xs font-black uppercase tracking-wide text-ink/40">Статус в альбоме</p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {STATUS_OPTIONS.map((o) => (
-                <button
-                  key={o.value}
-                  onClick={() => handleStatus(o.value)}
-                  className={cn(
-                    'rounded-2xl border-2 px-2 py-2.5 text-xs font-black transition active:scale-95',
-                    status === o.value
-                      ? 'border-grape bg-grape text-white shadow-pop'
-                      : 'border-ink/10 bg-white text-ink/60',
-                  )}
-                >
-                  {status === o.value && <Check size={13} className="mr-1 inline" />}
-                  {o.label}
-                </button>
-              ))}
-            </div>
+        {/* Действия с яйцом */}
+        {phase === 'unknown' && (
+          <Card className="mt-4 flex flex-col items-center gap-3 p-4 text-center">
+            <EggIcon size={28} className="text-grape" />
+            <p className="text-sm font-bold text-ink/70">
+              Это существо ещё не найдено. Купи его яйцо в магазине, вырасти — и узнаешь, кто внутри!
+            </p>
+            <Button size="lg" className="w-full" onClick={() => navigate('/shop')}>
+              <Sparkles size={18} /> В магазин за яйцом
+            </Button>
+          </Card>
+        )}
+        {phase === 'egg' && (
+          <Card className="mt-4 flex flex-col items-center gap-3 p-4 text-center">
+            <p className="text-sm font-bold text-ink/70">
+              Яйцо у Сони! Рост займёт около <span className="font-black text-grape">{formatDuration(total)}</span>.
+            </p>
+            <Button size="lg" variant="sun" className="w-full" onClick={grow}>
+              <Sparkles size={18} /> Растить яйцо!
+            </Button>
           </Card>
         )}
 
+        {/* О питомце */}
         <Card className="mt-3 p-4">
           <p className="text-xs font-black uppercase tracking-wide text-ink/40">О питомце</p>
-          <p className="mt-1.5 text-sm font-semibold leading-relaxed text-ink/80">{pet.description || 'Описание появится позже.'}</p>
-          {pet.source === 'catalog' && (
+          <p className="mt-1.5 text-sm font-semibold leading-relaxed text-ink/80">
+            {revealed
+              ? pet.description || 'Описание появится позже.'
+              : 'Кто внутри яйца — пока загадка. Вырасти яйцо, чтобы узнать это существо!'}
+          </p>
+          {pet.source === 'catalog' && revealed && (
             <p className="mt-2 text-xs font-bold text-ink/40">
               Источник: {pet.catalogOrigin ?? 'каталог'}
               {pet.sourceVerified ? ' · проверено' : ''}
@@ -130,6 +191,43 @@ export default function PetDetail() {
               <span className="font-black text-rosa">Заметка: </span>
               {custom.note}
             </p>
+          )}
+        </Card>
+
+        {/* Характеристики */}
+        <Card className="mt-3 p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-ink/40">Характеристики</p>
+          <div className="mt-2 space-y-2.5">
+            {stats.map((s) => (
+              <div key={s.label}>
+                <div className="flex justify-between text-xs font-black">
+                  <span className="text-ink/60">{s.label}</span>
+                  <span className="text-ink">{revealed ? s.value : '???'}</span>
+                </div>
+                <ProgressBar
+                  value={revealed ? s.value : 0}
+                  max={100}
+                  className="mt-1 h-2"
+                  gradient={false}
+                />
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Любимые привычки */}
+        <Card className="mt-3 p-4">
+          <p className="text-xs font-black uppercase tracking-wide text-ink/40">Любимые привычки</p>
+          {revealed ? (
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {habits.map((h) => (
+                <Chip key={h} className="bg-grape/10 px-3 py-1.5 text-xs font-bold text-grape">
+                  {h}
+                </Chip>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1.5 text-sm font-semibold text-ink/50">Пока неизвестно…</p>
           )}
         </Card>
 

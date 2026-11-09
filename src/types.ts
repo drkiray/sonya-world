@@ -36,7 +36,7 @@ export const LEGACY_RARITIES: Record<string, Rarity> = {
   Secret: 'Секретная',
 };
 
-export type CollectionStatus = 'not_found' | 'wanted' | 'owned';
+export type CollectionStatus = 'not_found' | 'egg' | 'growing' | 'owned';
 
 export type PetSource = 'catalog' | 'custom';
 
@@ -70,6 +70,8 @@ export interface CollectionEntry {
   petId: string;
   status: CollectionStatus;
   favorite: boolean;
+  /** Когда вылупится яйцо (ISO), пока статус 'growing' */
+  hatchAt?: string | null;
   updatedAt: string;
 }
 
@@ -159,6 +161,7 @@ export interface RewardRequest {
 export type TransactionType =
   | 'quest_reward'
   | 'reward_purchase'
+  | 'egg_purchase'
   | 'manual_adjust'
   | 'achievement_bonus';
 

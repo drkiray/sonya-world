@@ -14,6 +14,7 @@ import { fireConfetti } from '../components/Confetti';
 import {
   ACHIEVEMENTS,
   evaluateAchievements,
+  evaluateHatching,
   getState,
   subscribe,
   type AppState,
@@ -67,6 +68,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     installClickSound();
+  }, []);
+
+  // Вылупление яиц: проверяем созревшие яйца при старте и каждые 5 секунд
+  useEffect(() => {
+    let alive = true;
+    const tick = async () => {
+      if (!alive || !getState().ready) return;
+      const hatched = await evaluateHatching();
+      if (alive && hatched.length > 0) {
+        fireConfetti();
+        for (const pet of hatched) {
+          toast(`Яйцо вылупилось! Это ${pet.name}!`, 'success');
+        }
+      }
+    };
+    const t = setInterval(tick, 5000);
+    void tick();
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Отслеживаем новые достижения → показываем анимацию-поздравление

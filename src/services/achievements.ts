@@ -4,7 +4,7 @@ import { RARITIES } from '../types';
 
 // Оригинальные достижения. icon — ключ из ACHIEVEMENT_ICONS (см. components/art.tsx)
 export const ACHIEVEMENTS: AchievementDef[] = [
-  { id: 'first-egg', title: 'Первое яйцо', description: 'Отметь яйцо или питомца, которого хочешь получить', icon: 'egg' },
+  { id: 'first-egg', title: 'Первое яйцо', description: 'Купи первое яйцо в магазине или найди питомца', icon: 'egg' },
   { id: 'first-pet', title: 'Первый питомец', description: 'Появился первый питомец в коллекции', icon: 'paw' },
   { id: 'collector-10', title: 'Коллекционер 10', description: 'Собери 10 питомцев', icon: 'grid' },
   { id: 'collector-25', title: 'Коллекционер 25', description: 'Собери 25 питомцев', icon: 'crown' },
@@ -20,12 +20,12 @@ const RARE_ORDER = RARITIES;
 export function checkAchievements(state: AppState): string[] {
   const owned = state.pets.filter((p) => state.collection[p.id]?.status === 'owned');
   const ownedCount = owned.length;
-  const wantedCount = Object.values(state.collection).filter((e) => e.status === 'wanted').length;
+  const eggCount = Object.values(state.collection).filter((e) => e.status === 'egg' || e.status === 'growing').length;
   const approvedSubs = state.submissions.filter((s) => s.status === 'approved').length;
   const hasRare = owned.some((p) => RARE_ORDER.indexOf(p.rarity) >= RARE_ORDER.indexOf('Эпическая'));
 
   const checks: Record<string, boolean> = {
-    'first-egg': ownedCount >= 1 || wantedCount >= 1,
+    'first-egg': ownedCount >= 1 || eggCount >= 1,
     'first-pet': ownedCount >= 1,
     'collector-10': ownedCount >= 10,
     'collector-25': ownedCount >= 25,

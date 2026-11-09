@@ -16,6 +16,7 @@ import { ACHIEVEMENTS, checkAchievements } from './achievements';
 import { playSound } from './sound';
 import type {
   AppMeta,
+  Rarity,
   CatalogImportItem,
   ChildAchievement,
   CollectionEntry,
@@ -152,6 +153,18 @@ export async function initStore(): Promise<void> {
     loaded = { ...loaded, pets: loaded.pets.map((p) => byId.get(p.id) ?? p) };
   }
 
+  // Миграция старого статуса 'wanted' → 'not_found'
+  const wantedEntries = Object.values(loaded.collection).filter((e) => e.status === ('wanted' as string));
+  if (wantedEntries.length > 0) {
+    const fixed = wantedEntries.map((e) => ({ ...e, id: e.petId, status: 'not_found' as CollectionStatus }));
+    await idb.batch(fixed.map((value) => ({ store: 'collection' as const, value })));
+    const byId = new Map(fixed.map((e) => [e.petId, e]));
+    loaded = {
+      ...loaded,
+      collection: Object.fromEntries(Object.values(loaded.collection).map((e) => [e.petId, byId.get(e.petId) ?? e])),
+    };
+  }
+
   // Подхват заданий Сони на уже установленных устройствах
   const now = new Date().toISOString();
   const missing = buildSonyaQuests(now).filter((q) => !loaded.quests.some((x) => x.id === q.id));
@@ -181,7 +194,7 @@ async function seedDemoData(): Promise<void> {
     })),
     ...wantedIds.map((id) => ({
       store: 'collection' as const,
-      value: { id, petId: id, status: 'wanted' as CollectionStatus, favorite: id === 'demo-10', updatedAt: now },
+      value: { id, petId: id, status: 'not_found' as CollectionStatus, favorite: id === 'demo-10', updatedAt: now },
     })),
     ...DEMO_USER_PETS.map((p) => ({
       store: 'collection' as const,
@@ -271,6 +284,143 @@ export async function deleteCustomPet(petId: string): Promise<void> {
   delete collection[petId];
   setState({ pets: state.pets.filter((p) => p.id !== petId), collection });
   await evaluateAchievements();
+}
+
+// ─── Механика яиц: покупка → рост → вылупление ────────────────────────────
+
+const MIN = 60_000;
+const HOUR = 3_600_000;
+const DAY = 86_400_000;
+
+/** Время роста яйца по редкости: от 5 минут до 7 дней */
+export const EGG_GROW_MS: Record<Rarity, number> = {
+  'Обычная': 5 * MIN,
+  'Необычная': 15 * MIN,
+  'Редкая': 30 * MIN,
+  'Эпическая': 1 * HOUR,
+  'Легендарная': 4 * HOUR,
+  'Мифическая': 12 * HOUR,
+  'Космическая': 1 * DAY,
+  'Секретная': 2 * DAY,
+  'Вечная': 4 * DAY,
+  'Божественная': 7 * DAY,
+};
+
+/** Цена яйца в монетах по редкости */
+export const EGG_PRICE: Record<Rarity, number> = {
+  'Обычная': 10,
+  'Необычная': 15,
+  'Редкая': 20,
+  'Эпическая': 30,
+  'Легендарная': 50,
+  'Мифическая': 80,
+  'Космическая': 120,
+  'Секретная': 200,
+  'Вечная': 320,
+  'Божественная': 500,
+};
+
+export type PetPhase = 'unknown' | 'egg' | 'growing' | 'owned';
+
+/** Текущая фаза существа: загадка (нет яйца) → яйцо → растёт → появился */
+export function petPhase(pet: Pet, entry?: CollectionEntry): PetPhase {
+  if (pet.source === 'custom') return 'owned';
+  if (entry?.status === 'owned') return 'owned';
+  if (entry?.status === 'growing') return 'growing';
+  if (entry?.status === 'egg') return 'egg';
+  return 'unknown';
+}
+
+/** Покупка яйца в магазине: списание сразу, без подтверждения родителя */
+export async function buyEgg(petId: string): Promise<void> {
+  const pet = state.pets.find((p) => p.id === petId);
+  if (!pet || pet.source !== 'catalog') throw new BizError('Яйцо можно купить только из энциклопедии');
+  if (petPhase(pet, state.collection[petId]) !== 'unknown') throw new BizError('Это яйцо уже у Сони');
+
+  const cost = EGG_PRICE[pet.rarity];
+  const refId = `egg-purchase:${petId}`;
+  if (state.transactions.some((t) => t.referenceId === refId)) throw new BizError('Это яйцо уже куплено');
+  if (state.profile.coins < cost) throw new BizError(`Не хватает монет: нужно ${cost}, а у Сони ${state.profile.coins}`);
+
+  const now = new Date().toISOString();
+  const txRecord: Transaction = {
+    id: uid(),
+    amount: -cost,
+    type: 'egg_purchase',
+    description: `Яйцо «${pet.name}»`,
+    referenceId: refId,
+    actor: 'child',
+    createdAt: now,
+  };
+  const profile: Profile = { ...state.profile, coins: state.profile.coins - cost };
+  const entry: CollectionEntry & { id: string } = {
+    id: petId,
+    petId,
+    status: 'egg',
+    favorite: state.collection[petId]?.favorite ?? false,
+    hatchAt: null,
+    updatedAt: now,
+  };
+  await idb.batch([
+    { store: 'transactions', value: txRecord },
+    { store: 'profile', value: { id: PROFILE_ID, ...profile } },
+    { store: 'collection', value: entry },
+  ]);
+  setState({
+    transactions: [txRecord, ...state.transactions],
+    profile,
+    collection: { ...state.collection, [petId]: entry },
+  });
+  playSound('coins');
+}
+
+/** Запуск роста яйца */
+export async function startGrowing(petId: string): Promise<void> {
+  const pet = state.pets.find((p) => p.id === petId);
+  if (!pet) throw new BizError('Питомец не найден');
+  const entry = state.collection[petId];
+  if (petPhase(pet, entry) !== 'egg') throw new BizError('Яйцо уже растёт или вылупилось');
+
+  const updated: CollectionEntry & { id: string } = {
+    ...entry!,
+    id: petId,
+    petId,
+    status: 'growing',
+    hatchAt: new Date(Date.now() + EGG_GROW_MS[pet.rarity]).toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  await idb.put('collection', updated);
+  setState({ collection: { ...state.collection, [petId]: updated } });
+}
+
+/** Вылупление всех созревших яиц. Вызывается при старте и по таймеру. */
+export async function evaluateHatching(): Promise<Pet[]> {
+  const now = Date.now();
+  const due = state.pets.filter((p) => {
+    const e = state.collection[p.id];
+    return e?.status === 'growing' && e.hatchAt && Date.parse(e.hatchAt) <= now;
+  });
+  if (due.length === 0) return [];
+
+  const writes: Array<{ store: 'collection'; value: { id: string } }> = [];
+  const collection = { ...state.collection };
+  for (const pet of due) {
+    const prev = collection[pet.id]!;
+    const updated: CollectionEntry & { id: string } = {
+      ...prev,
+      id: pet.id,
+      status: 'owned',
+      hatchAt: null,
+      updatedAt: new Date().toISOString(),
+    };
+    writes.push({ store: 'collection', value: updated });
+    collection[pet.id] = updated;
+  }
+  await idb.batch(writes);
+  setState({ collection });
+  playSound('achievement');
+  await evaluateAchievements();
+  return due;
 }
 
 // ─── Импорт каталога ───────────────────────────────────────────────────────

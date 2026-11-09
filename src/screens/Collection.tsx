@@ -1,27 +1,38 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Egg, Heart, Plus, Search } from 'lucide-react';
 import { useAppState } from '../state/AppContext';
-import { PetImage, RARITY_COLORS, RARITY_LABELS } from '../components/art';
+import { petPhase } from '../services/store';
+import { EggArt, PetImage, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { Card, Chip, EmptyState, Segmented } from '../components/ui';
 import type { CollectionStatus, Pet } from '../types';
 import { cn } from '../lib/cn';
 
-type Filter = 'all' | 'owned' | 'wanted' | 'missing' | 'favorite';
+type Filter = 'all' | 'owned' | 'eggs' | 'missing' | 'favorite';
 
 const FILTERS: Array<{ value: Filter; label: string }> = [
   { value: 'all', label: 'Все' },
   { value: 'owned', label: 'Найденные' },
-  { value: 'wanted', label: 'Хочу получить' },
+  { value: 'eggs', label: 'Яйца' },
   { value: 'missing', label: 'Не найдены' },
   { value: 'favorite', label: 'Избранное' },
 ];
 
 const STATUS_LABELS: Record<CollectionStatus, string> = {
   not_found: 'Не найден',
-  wanted: 'Хочу получить',
+  egg: 'Яйцо ждёт',
+  growing: 'Яйцо растёт!',
   owned: 'Есть у меня',
 };
+
+/** Яйцо существа: затемнённое, если существо ещё не найдено */
+export function EggImage({ pet, size = 96, dark = false }: { pet: Pet; size?: number; dark?: boolean }) {
+  return (
+    <div style={dark ? { filter: 'brightness(0.32) saturate(0.45)' } : undefined}>
+      <EggArt rarity={pet.rarity} seed={pet.artSeed} size={size} />
+    </div>
+  );
+}
 
 export default function Collection() {
   const state = useAppState();
@@ -32,26 +43,33 @@ export default function Collection() {
   const { pets, collection } = state;
   const catalog = pets.filter((p) => p.source === 'catalog');
   const custom = pets.filter((p) => p.source === 'custom');
+  const myEggs = catalog.filter((p) => {
+    const phase = petPhase(p, collection[p.id]);
+    return phase === 'egg' || phase === 'growing';
+  });
 
-  const list = tab === 'catalog' ? catalog : custom;
+  const list = useMemo(
+    () => (tab === 'catalog' ? catalog : [...myEggs, ...custom]),
+    [tab, catalog, custom, myEggs],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return list.filter((p) => {
-      const entry = collection[p.id];
-      const status: CollectionStatus = entry?.status ?? 'not_found';
-      if (filter === 'owned' && status !== 'owned') return false;
-      if (filter === 'wanted' && status !== 'wanted') return false;
-      if (filter === 'missing' && status !== 'not_found') return false;
-      if (filter === 'favorite' && !entry?.favorite) return false;
+      const phase = petPhase(p, collection[p.id]);
+      if (filter === 'owned' && phase !== 'owned') return false;
+      if (filter === 'eggs' && phase !== 'egg' && phase !== 'growing') return false;
+      if (filter === 'missing' && phase !== 'unknown') return false;
+      if (filter === 'favorite' && !collection[p.id]?.favorite) return false;
       if (q && !p.name.toLowerCase().includes(q) && !p.category.toLowerCase().includes(q)) return false;
       return true;
     });
   }, [list, collection, filter, query]);
 
-  const ownedCatalog = catalog.filter((p) => collection[p.id]?.status === 'owned').length;
+  const ownedCatalog = catalog.filter((p) => petPhase(p, collection[p.id]) === 'owned').length;
   const pct = catalog.length ? Math.round((ownedCatalog / catalog.length) * 100) : 0;
-  const foundTotal = pets.filter((p) => collection[p.id]?.status === 'owned').length;
+  const foundTotal = pets.filter((p) => petPhase(p, collection[p.id]) === 'owned').length;
+  const myCount = custom.length + myEggs.length;
 
   return (
     <div className="flex-1 overflow-y-auto bg-mist pb-4">
@@ -91,7 +109,7 @@ export default function Collection() {
             className="flex-1"
             options={[
               { value: 'catalog', label: 'Энциклопедия' },
-              { value: 'custom', label: `Мои питомцы (${custom.length})` },
+              { value: 'custom', label: `Мои питомцы (${myCount})` },
             ]}
             value={tab}
             onChange={setTab}
@@ -111,12 +129,16 @@ export default function Collection() {
           <div className="mt-6">
             <EmptyState
               art={<Egg size={64} className="text-grape" />}
-              title={tab === 'custom' ? 'Пока нет своих питомцев' : 'Никого не нашлось'}
-              text={tab === 'custom' ? 'Слепи, нарисуй или придумай питомца и добавь его сюда!' : 'Попробуй изменить фильтр или поиск.'}
+              title={tab === 'custom' ? 'Пока пусто' : 'Никого не нашлось'}
+              text={
+                tab === 'custom'
+                  ? 'Добавь своего питомца или купи яйцо в магазине!'
+                  : 'Попробуй изменить фильтр или поиск.'
+              }
               action={
                 tab === 'custom' ? (
-                  <Link to="/collection/new" className="rounded-2xl bg-grape px-4 py-2 text-sm font-black text-white">
-                    Добавить питомца
+                  <Link to="/shop" className="rounded-2xl bg-grape px-4 py-2 text-sm font-black text-white">
+                    Купить яйцо
                   </Link>
                 ) : undefined
               }
@@ -137,28 +159,39 @@ export default function Collection() {
 function PetCard({ pet }: { pet: Pet }) {
   const state = useAppState();
   const entry = state.collection[pet.id];
-  const status: CollectionStatus = pet.source === 'custom' ? 'owned' : entry?.status ?? 'not_found';
+  const phase = petPhase(pet, entry);
   const rc = RARITY_COLORS[pet.rarity];
-  const owned = status === 'owned';
 
   return (
-    <Link to={`/collection/${pet.id}`} className="block active:scale-[0.97] transition">
-      <Card className={cn('overflow-hidden', !owned && pet.source === 'catalog' && 'opacity-90')}>
-        <div className="relative flex justify-center pt-3" style={{ background: `linear-gradient(180deg, ${rc.soft}, #fff)` }}>
-          {entry?.favorite && (
-            <Heart size={16} className="absolute right-2.5 top-2.5 fill-rosa text-rosa" />
-          )}
-          <PetImage pet={pet} size={96} silhouette={pet.source === 'catalog' && !owned} />
+    <Link to={`/collection/${pet.id}`} className="block transition active:scale-[0.97]">
+      <Card className="overflow-hidden">
+        <div
+          className="relative flex h-[108px] items-center justify-center"
+          style={{ background: `linear-gradient(180deg, ${rc.soft}, #fff)` }}
+        >
+          {entry?.favorite && <Heart size={16} className="absolute right-2.5 top-2.5 fill-rosa text-rosa" />}
+          {phase === 'unknown' && <EggImage pet={pet} size={88} dark />}
+          {(phase === 'egg' || phase === 'growing') && <EggImage pet={pet} size={88} />}
+          {phase === 'owned' && <PetImage pet={pet} size={88} />}
         </div>
         <div className="p-3">
-          <p className="truncate text-sm font-black text-ink">{pet.name}</p>
+          <p className="truncate text-sm font-black text-ink">
+            {phase === 'owned' ? pet.name : phase === 'unknown' ? 'Неизвестное существо' : 'Секретное яйцо'}
+          </p>
           <div className="mt-1 flex items-center gap-1">
             <Chip className={cn('border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
               {RARITY_LABELS[pet.rarity]}
             </Chip>
           </div>
-          <p className={cn('mt-1.5 text-[11px] font-bold', status === 'owned' ? 'text-green-600' : status === 'wanted' ? 'text-rosa' : 'text-ink/40')}>
-            {STATUS_LABELS[status]}
+          <p
+            className={cn(
+              'mt-1.5 text-[11px] font-bold',
+              phase === 'owned' ? 'text-green-600' : phase === 'unknown' ? 'text-ink/40' : 'text-sky',
+            )}
+          >
+            {STATUS_LABELS[
+              phase === 'unknown' ? 'not_found' : phase === 'egg' ? 'egg' : phase === 'growing' ? 'growing' : 'owned'
+            ]}
           </p>
         </div>
       </Card>

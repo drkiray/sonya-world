@@ -300,6 +300,40 @@ function lighten(hex: string): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
+const STAT_LABELS = ['Сила', 'Скорость', 'Удача', 'Харизма'];
+const HABITS_POOL = [
+  'Обожает солнечные ванны',
+  'Коллекционирует блестящие камешки',
+  'Вздремнуть после обеда',
+  'Смотреть на облака',
+  'Танцевать под дождём',
+  'Прятаться в листве',
+  'Играть с мыльными пузырями',
+  'Греться у окошка',
+  'Собирать цветочки',
+  'Слушать, как поёт Соня',
+  'Кататься с горки',
+  'Облизываться на сладкое',
+];
+
+/** Характеристики питомца (детерминированы от сида) */
+export function petStats(seed: number): Array<{ label: string; value: number }> {
+  const rnd = mulberry32(seed * 104729 + 13);
+  return STAT_LABELS.map((label) => ({ label, value: 20 + Math.floor(rnd() * 81) }));
+}
+
+/** Любимые привычки питомца (2–3 из пула) */
+export function petHabits(seed: number): string[] {
+  const rnd = mulberry32(seed * 15485863 + 7);
+  const pool = [...HABITS_POOL];
+  const count = 2 + Math.floor(rnd() * 2);
+  const out: string[] = [];
+  for (let i = 0; i < count; i++) {
+    out.push(pool.splice(Math.floor(rnd() * pool.length), 1)[0]);
+  }
+  return out;
+}
+
 /** Картинка питомца: ручная премиальная иллюстрация → настоящий ассет → процедурный арт */
 export function PetImage({ pet, size, silhouette, className }: { pet: Pet; size: number; silhouette?: boolean; className?: string }) {
   const Premium = PREMIUM_PETS[pet.id];
