@@ -22,7 +22,7 @@ interface DemoPetDef {
 }
 
 const DEMO_PETS: DemoPetDef[] = [
-  { id: 'demo-01', name: 'Пушистик-хранитель', rarity: 'Обычная', category: 'Лесные', seed: 11, description: 'Пушистик-хранитель обитает в демо-лесу Мира Сонечки. Любит ягоды и дневной сон.' },
+  { id: 'demo-01', name: 'Пушистик-хранитель', rarity: 'Обычная', category: 'Лесные', seed: 11, description: 'Пушистик-хранитель обитает в густом лесу Мира Сонечки. Любит ягоды и дневной сон.' },
   { id: 'demo-02', name: 'Росистый ежик', rarity: 'Обычная', category: 'Лесные', seed: 22, description: 'Ежик с иголками, похожими на капли росы. Собирает блестящие камешки.' },
   { id: 'demo-03', name: 'Хмурый камнеед', rarity: 'Необычная', category: 'Горные', seed: 33, description: 'Грызёт камни и пугает туристов-муравьёв. На самом деле очень добрый.' },
   { id: 'demo-04', name: 'Светлячок-певец', rarity: 'Необычная', category: 'Ночные', seed: 44, description: 'Светится в темноте и напевает колыбельные остальным питомцам.' },
@@ -47,7 +47,7 @@ export function buildDemoPets(now: string): { pets: Pet[]; ownedIds: string[]; w
     artSeed: d.seed,
     source: 'catalog',
     isDemo: true,
-    catalogOrigin: 'Демо-каталог (вымышленные существа)',
+    catalogOrigin: 'Каталог Мира Сонечки',
     sourceVerified: false,
     createdAt: now,
   }));

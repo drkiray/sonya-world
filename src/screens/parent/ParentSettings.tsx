@@ -92,16 +92,16 @@ export default function ParentSettings() {
 
         <button className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5" onClick={() => setConfirmReset(true)}>
           <Sparkles className="text-ink/40" size={20} />
-          <span className="flex-1 text-sm font-black text-ink">Сбросить демонстрационные данные</span>
+          <span className="flex-1 text-sm font-black text-ink">Сбросить игру</span>
         </button>
       </Card>
 
       <ImportModal open={showImport} onClose={() => setShowImport(false)} />
       <ChangePinModal open={showPin} onClose={() => setShowPin(false)} />
 
-      <Modal open={confirmReset} onClose={() => setConfirmReset(false)} title="Сбросить демоданные?">
+      <Modal open={confirmReset} onClose={() => setConfirmReset(false)} title="Сбросить игру?">
         <p className="text-sm font-semibold text-ink/70">
-          Все питомцы, задания, монеты и достижения Сони вернутся к первоначальному демонстрационному состоянию.
+          Все питомцы, задания, монеты и достижения Сони вернутся к самому началу.
           Это действие нельзя отменить.
         </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
@@ -111,7 +111,7 @@ export default function ParentSettings() {
             onClick={async () => {
               await resetDemoData();
               setConfirmReset(false);
-              toast('Демоданные восстановлены', 'success');
+              toast('Игра сброшена', 'success');
             }}
           >
             Сбросить

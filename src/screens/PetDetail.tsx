@@ -180,12 +180,6 @@ export default function PetDetail() {
               ? pet.description || 'Описание появится позже.'
               : 'Кто внутри яйца — пока загадка. Вырасти яйцо, чтобы узнать это существо!'}
           </p>
-          {pet.source === 'catalog' && revealed && (
-            <p className="mt-2 text-xs font-bold text-ink/40">
-              Источник: {pet.catalogOrigin ?? 'каталог'}
-              {pet.sourceVerified ? ' · проверено' : ''}
-            </p>
-          )}
           {custom?.note && (
             <p className="mt-2 rounded-2xl bg-rosa/10 p-3 text-sm font-semibold text-ink/80">
               <span className="font-black text-rosa">Заметка: </span>

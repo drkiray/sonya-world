@@ -165,6 +165,20 @@ export async function initStore(): Promise<void> {
     };
   }
 
+  // Миграция текстов: убираем «демо» из описаний и источников
+  const textFixed = loaded.pets
+    .filter((p) => p.description.includes('демо-лес') || (p.catalogOrigin ?? '').includes('Демо'))
+    .map((p) => ({
+      ...p,
+      description: p.description.replace('демо-лес', 'густом лесу'),
+      catalogOrigin: p.catalogOrigin === 'Демо-каталог (вымышленные существа)' ? 'Каталог Мира Сонечки' : p.catalogOrigin,
+    }));
+  if (textFixed.length > 0) {
+    await idb.batch(textFixed.map((value) => ({ store: 'pets' as const, value })));
+    const byId = new Map(textFixed.map((p) => [p.id, p]));
+    loaded = { ...loaded, pets: loaded.pets.map((p) => byId.get(p.id) ?? p) };
+  }
+
   // Подхват заданий Сони на уже установленных устройствах
   const now = new Date().toISOString();
   const missing = buildSonyaQuests(now).filter((q) => !loaded.quests.some((x) => x.id === q.id));
