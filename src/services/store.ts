@@ -10,7 +10,6 @@ import {
   buildInitialMeta,
   buildInitialProfile,
   buildSonyaQuests,
-  DEMO_USER_PETS,
 } from './seed';
 import { ACHIEVEMENTS, checkAchievements } from './achievements';
 import { playSound } from './sound';
@@ -33,6 +32,7 @@ import type {
   TransactionActor,
 } from '../types';
 import { LEGACY_RARITIES } from '../types';
+import { makeVariant } from './variants';
 
 export interface AppState {
   ready: boolean;
@@ -187,7 +187,6 @@ async function seedDemoData(): Promise<void> {
     { store: 'meta', value: meta },
     { store: 'profile', value: profile },
     ...pets.map((p) => ({ store: 'pets' as const, value: p })),
-    ...DEMO_USER_PETS.map((p) => ({ store: 'pets' as const, value: p })),
     ...ownedIds.map((id) => ({
       store: 'collection' as const,
       value: { id, petId: id, status: 'owned' as CollectionStatus, favorite: false, updatedAt: now },
@@ -195,10 +194,6 @@ async function seedDemoData(): Promise<void> {
     ...wantedIds.map((id) => ({
       store: 'collection' as const,
       value: { id, petId: id, status: 'not_found' as CollectionStatus, favorite: id === 'demo-10', updatedAt: now },
-    })),
-    ...DEMO_USER_PETS.map((p) => ({
-      store: 'collection' as const,
-      value: { id: p.id, petId: p.id, status: 'owned' as CollectionStatus, favorite: false, updatedAt: now },
     })),
     ...quests.map((q) => ({ store: 'quests' as const, value: q })),
     ...rewards.map((r) => ({ store: 'rewards' as const, value: r })),
@@ -331,15 +326,28 @@ export function petPhase(pet: Pet, entry?: CollectionEntry): PetPhase {
   return 'unknown';
 }
 
-/** Покупка яйца в магазине: списание сразу, без подтверждения родителя */
-export async function buyEgg(petId: string): Promise<void> {
-  const pet = state.pets.find((p) => p.id === petId);
-  if (!pet || pet.source !== 'catalog') throw new BizError('Яйцо можно купить только из энциклопедии');
-  if (petPhase(pet, state.collection[petId]) !== 'unknown') throw new BizError('Это яйцо уже у Сони');
+/** Покупка сюрприз-яйца по редкости: списание сразу, без подтверждения родителя.
+ *  При покупке случайно выбирается существо этой редкости; если оно уже есть
+ *  в коллекции — рождается редкая вариация с новым именем и визуалом. */
+export async function buyEgg(rarity: Rarity): Promise<Pet> {
+  const pool = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity);
+  if (pool.length === 0) throw new BizError('Существ этой редкости пока нет в игре');
 
-  const cost = EGG_PRICE[pet.rarity];
-  const refId = `egg-purchase:${petId}`;
-  if (state.transactions.some((t) => t.referenceId === refId)) throw new BizError('Это яйцо уже куплено');
+  // Пока есть ненайденные существа этой редкости — выпадает всегда новое.
+  // Вариация рождается, только когда все существа редкости уже в коллекции.
+  const unknownPool = pool.filter((p) => petPhase(p, state.collection[p.id]) === 'unknown');
+  const newPets: Pet[] = [];
+  let target: Pet;
+  if (unknownPool.length > 0) {
+    target = unknownPool[Math.floor(Math.random() * unknownPool.length)];
+  } else {
+    const base = pool[Math.floor(Math.random() * pool.length)];
+    const variant = makeVariant(base, new Set(state.pets.map((p) => p.name.toLowerCase())));
+    newPets.push(variant);
+    target = variant;
+  }
+
+  const cost = EGG_PRICE[rarity];
   if (state.profile.coins < cost) throw new BizError(`Не хватает монет: нужно ${cost}, а у Сони ${state.profile.coins}`);
 
   const now = new Date().toISOString();
@@ -347,31 +355,35 @@ export async function buyEgg(petId: string): Promise<void> {
     id: uid(),
     amount: -cost,
     type: 'egg_purchase',
-    description: `Яйцо «${pet.name}»`,
-    referenceId: refId,
+    description: newPets.length ? `Яйцо · вариация «${target.name}»` : `Яйцо «${target.name}»`,
+    referenceId: `egg-purchase:${uid()}`,
     actor: 'child',
     createdAt: now,
   };
   const profile: Profile = { ...state.profile, coins: state.profile.coins - cost };
   const entry: CollectionEntry & { id: string } = {
-    id: petId,
-    petId,
+    id: target.id,
+    petId: target.id,
     status: 'egg',
-    favorite: state.collection[petId]?.favorite ?? false,
+    favorite: false,
     hatchAt: null,
     updatedAt: now,
   };
+
   await idb.batch([
+    ...newPets.map((value) => ({ store: 'pets' as const, value })),
     { store: 'transactions', value: txRecord },
     { store: 'profile', value: { id: PROFILE_ID, ...profile } },
     { store: 'collection', value: entry },
   ]);
   setState({
+    pets: newPets.length ? [...state.pets, ...newPets] : state.pets,
     transactions: [txRecord, ...state.transactions],
     profile,
-    collection: { ...state.collection, [petId]: entry },
+    collection: { ...state.collection, [target.id]: entry },
   });
   playSound('coins');
+  return target;
 }
 
 /** Запуск роста яйца */

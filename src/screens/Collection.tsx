@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Egg, Heart, Plus, Search } from 'lucide-react';
 import { useAppState } from '../state/AppContext';
@@ -34,61 +34,66 @@ export function EggImage({ pet, size = 96, dark = false }: { pet: Pet; size?: nu
   );
 }
 
+/** Единый питомник: энциклопедические существа, вариации из яиц и свои питомцы */
 export default function Collection() {
   const state = useAppState();
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
-  const [tab, setTab] = useState<'catalog' | 'custom'>('catalog');
 
-  const { pets, collection } = state;
-  const catalog = pets.filter((p) => p.source === 'catalog');
-  const custom = pets.filter((p) => p.source === 'custom');
-  const myEggs = catalog.filter((p) => {
-    const phase = petPhase(p, collection[p.id]);
-    return phase === 'egg' || phase === 'growing';
-  });
-
-  const list = useMemo(
-    () => (tab === 'catalog' ? catalog : [...myEggs, ...custom]),
-    [tab, catalog, custom, myEggs],
-  );
+  const list = useMemo(() => {
+    const bases = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf);
+    const rest = state.pets
+      .filter((p) => p.source === 'custom' || p.variantOf)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    return [...bases, ...rest];
+  }, [state.pets]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return list.filter((p) => {
-      const phase = petPhase(p, collection[p.id]);
+      const phase = petPhase(p, state.collection[p.id]);
       if (filter === 'owned' && phase !== 'owned') return false;
       if (filter === 'eggs' && phase !== 'egg' && phase !== 'growing') return false;
       if (filter === 'missing' && phase !== 'unknown') return false;
-      if (filter === 'favorite' && !collection[p.id]?.favorite) return false;
+      if (filter === 'favorite' && !state.collection[p.id]?.favorite) return false;
       if (q && !p.name.toLowerCase().includes(q) && !p.category.toLowerCase().includes(q)) return false;
       return true;
     });
-  }, [list, collection, filter, query]);
+  }, [list, state.collection, filter, query]);
 
-  const ownedCatalog = catalog.filter((p) => petPhase(p, collection[p.id]) === 'owned').length;
-  const pct = catalog.length ? Math.round((ownedCatalog / catalog.length) * 100) : 0;
-  const foundTotal = pets.filter((p) => petPhase(p, collection[p.id]) === 'owned').length;
-  const myCount = custom.length + myEggs.length;
+  const bases = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf);
+  const ownedTotal = state.pets.filter((p) => petPhase(p, state.collection[p.id]) === 'owned').length;
+  const pctBases = bases.length ? Math.round((ownedTotal / bases.length) * 100) : 0;
 
   return (
     <div className="flex-1 overflow-y-auto bg-mist pb-4">
       <header className="rounded-b-[2rem] bg-gradient-to-b from-night to-[#35285E] px-4 pb-5 pt-5 text-white">
-        <h1 className="text-2xl font-black">Альбом</h1>
-        <p className="mt-0.5 text-sm font-bold text-white/60">Энциклопедия питомцев Сони</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-black">Питомцы</h1>
+            <p className="mt-0.5 text-sm font-bold text-white/60">Питомник Сони: яйца и питомцы</p>
+          </div>
+          <Link
+            to="/collection/new"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sun text-night shadow-card active:scale-95"
+            aria-label="Добавить своего питомца"
+          >
+            <Plus size={20} />
+          </Link>
+        </div>
 
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           <div className="rounded-2xl bg-white/10 p-2.5">
-            <p className="text-xl font-black text-sky">{pets.length}</p>
+            <p className="text-xl font-black text-sky">{state.pets.length}</p>
             <p className="text-[10px] font-bold uppercase text-white/60">всего</p>
           </div>
           <div className="rounded-2xl bg-white/10 p-2.5">
-            <p className="text-xl font-black text-sun">{foundTotal}</p>
+            <p className="text-xl font-black text-sun">{ownedTotal}</p>
             <p className="text-[10px] font-bold uppercase text-white/60">найдено</p>
           </div>
           <div className="rounded-2xl bg-white/10 p-2.5">
-            <p className="text-xl font-black text-rosa">{pct}%</p>
-            <p className="text-[10px] font-bold uppercase text-white/60">альбом</p>
+            <p className="text-xl font-black text-rosa">{pctBases}%</p>
+            <p className="text-[10px] font-bold uppercase text-white/60">питомник</p>
           </div>
         </div>
 
@@ -104,43 +109,18 @@ export default function Collection() {
       </header>
 
       <main className="px-4">
-        <div className="mt-4 flex items-center gap-2">
-          <Segmented
-            className="flex-1"
-            options={[
-              { value: 'catalog', label: 'Энциклопедия' },
-              { value: 'custom', label: `Мои питомцы (${myCount})` },
-            ]}
-            value={tab}
-            onChange={setTab}
-          />
-          <Link
-            to="/collection/new"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-grape text-white shadow-pop active:scale-95"
-            aria-label="Добавить своего питомца"
-          >
-            <Plus size={20} />
-          </Link>
-        </div>
-
-        <Segmented className="mt-3" options={FILTERS} value={filter} onChange={setFilter} />
+        <Segmented className="mt-4" options={FILTERS} value={filter} onChange={setFilter} />
 
         {filtered.length === 0 ? (
           <div className="mt-6">
             <EmptyState
               art={<Egg size={64} className="text-grape" />}
-              title={tab === 'custom' ? 'Пока пусто' : 'Никого не нашлось'}
-              text={
-                tab === 'custom'
-                  ? 'Добавь своего питомца или купи яйцо в магазине!'
-                  : 'Попробуй изменить фильтр или поиск.'
-              }
+              title="Пока пусто"
+              text="Купи яйцо в магазине или добавь своего питомца!"
               action={
-                tab === 'custom' ? (
-                  <Link to="/shop" className="rounded-2xl bg-grape px-4 py-2 text-sm font-black text-white">
-                    Купить яйцо
-                  </Link>
-                ) : undefined
+                <Link to="/shop" className="rounded-2xl bg-grape px-4 py-2 text-sm font-black text-white">
+                  Купить яйцо
+                </Link>
               }
             />
           </div>
@@ -178,10 +158,11 @@ function PetCard({ pet }: { pet: Pet }) {
           <p className="truncate text-sm font-black text-ink">
             {phase === 'owned' ? pet.name : phase === 'unknown' ? 'Неизвестное существо' : 'Секретное яйцо'}
           </p>
-          <div className="mt-1 flex items-center gap-1">
+          <div className="mt-1 flex flex-wrap items-center gap-1">
             <Chip className={cn('border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
               {RARITY_LABELS[pet.rarity]}
             </Chip>
+            {pet.variantOf && <Chip className="bg-sky/15 px-1.5 text-[10px] text-sky">Вариация</Chip>}
           </div>
           <p
             className={cn(

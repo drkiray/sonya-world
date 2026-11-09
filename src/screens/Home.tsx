@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, PawPrint, ScrollText, Sparkles } from 'lucide-react';
 import { useAppState } from '../state/AppContext';
-import { ChildAvatar, IslandHero, PetImage } from '../components/art';
+import { ChildAvatar, EggArt, IslandHero, PetImage } from '../components/art';
 import { CoinChip } from '../components/StatusChips';
 import { Button, Card, Chip, ProgressBar, SectionTitle } from '../components/ui';
 import { xpProgress } from '../services/store';
@@ -50,14 +50,14 @@ export default function Home() {
             <p className="mt-1 text-[11px] font-bold text-white/60">{xp.intoLevel}/{xp.needed} опыта</p>
           </div>
           <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-3 backdrop-blur">
-            {featuredPet && (
-              <PetImage
-                pet={featuredPet}
-                size={56}
-                silhouette={collection[featuredPet.id]?.status !== 'owned'}
-                className="animate-floaty shrink-0"
-              />
-            )}
+            {featuredPet &&
+              (owned.length > 0 ? (
+                <PetImage pet={featuredPet} size={56} className="animate-floaty shrink-0" />
+              ) : (
+                <div className="animate-floaty shrink-0" style={{ filter: 'brightness(0.35) saturate(0.5)' }}>
+                  <EggArt rarity={featuredPet.rarity} seed={featuredPet.artSeed} size={56} />
+                </div>
+              ))}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-white/60">Питомцы</p>
               <p className="text-2xl font-black text-white">
@@ -71,7 +71,7 @@ export default function Home() {
       </header>
 
       <main className="px-4">
-        {/* Прогресс альбома */}
+        {/* Прогресс питомника */}
         <SectionTitle
           action={
             <Link to="/collection" className="flex items-center gap-1 text-sm font-bold text-grape">
@@ -79,11 +79,11 @@ export default function Home() {
             </Link>
           }
         >
-          Прогресс альбома
+          Прогресс питомника
         </SectionTitle>
         <Card className="p-4">
           <div className="flex items-center justify-between text-sm font-bold">
-            <span className="text-ink/60">Энциклопедия питомцев</span>
+            <span className="text-ink/60">Питомник Сони</span>
             <span className="text-grape">{ownedCatalog.length} из {catalogPets.length}</span>
           </div>
           <ProgressBar value={ownedCatalog.length} max={catalogPets.length} className="mt-2" />
@@ -155,7 +155,7 @@ export default function Home() {
 
         <Link to="/collection" className="mt-6 block">
           <Button size="lg" className="w-full">
-            <PawPrint size={20} /> Мой альбом
+            <PawPrint size={20} /> Мои питомцы
           </Button>
         </Link>
       </main>

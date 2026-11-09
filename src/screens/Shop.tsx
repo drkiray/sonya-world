@@ -2,11 +2,10 @@ import { useMemo, useState } from 'react';
 import { Coins, PackageCheck, ShoppingBag } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
 import { buyEgg, EGG_GROW_MS, EGG_PRICE, petPhase, requestReward } from '../services/store';
-import { EggImage } from './Collection';
+import { EggArt, RewardArt, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { CoinChip } from '../components/StatusChips';
-import { RewardArt, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { Button, Card, Chip, EmptyState, Modal, ProgressBar, Segmented } from '../components/ui';
-import { REWARD_CATEGORY_LABELS, type Pet, type Reward, type RewardCategory } from '../types';
+import { REWARD_CATEGORY_LABELS, RARITIES, type Rarity, type Reward, type RewardCategory } from '../types';
 import { cn } from '../lib/cn';
 
 type CatFilter = 'all' | RewardCategory | 'eggs';
@@ -38,10 +37,6 @@ export default function Shop() {
             <p className="mt-0.5 text-sm font-bold text-white/60">Обменивай монеты на призы</p>
           </div>
           <CoinChip />
-        </div>
-        <div className="mt-4 flex items-center gap-2 rounded-2xl bg-white/10 p-3 text-xs font-bold text-white/70">
-          <ShoppingBag size={16} className="shrink-0 text-sun" />
-          Мама подтверждает каждую заявку и сама выдаёт награду.
         </div>
       </header>
 
@@ -83,21 +78,18 @@ export default function Shop() {
   );
 }
 
-/** Витрина яиц: купи неизвестное существо и вырасти его */
+/** Витрина сюрприз-яиц: одно яйцо = случайное существо выбранной редкости */
 function EggShop() {
   const state = useAppState();
   const { toast } = useUi();
-  const [selected, setSelected] = useState<Pet | null>(null);
+  const [selected, setSelected] = useState<Rarity | null>(null);
 
-  const eggs = state.pets.filter((p) => p.source === 'catalog' && petPhase(p, state.collection[p.id]) === 'unknown');
+  const available = RARITIES.filter((r) => state.pets.some((p) => p.source === 'catalog' && !p.variantOf && p.rarity === r));
 
-  if (eggs.length === 0) {
+  if (available.length === 0) {
     return (
       <div className="mt-6">
-        <EmptyState
-          title="Все яйца куплены!"
-          text="Соня собрала всю коллекцию. Новые существа появятся позже."
-        />
+        <EmptyState title="Яйца закончились" text="Новые существа скоро появятся!" />
       </div>
     );
   }
@@ -105,30 +97,35 @@ function EggShop() {
   return (
     <>
       <p className="mt-3 px-1 text-xs font-semibold text-ink/50">
-        Купи яйцо — и неизвестное существо появится в «Моих питомцах». Вырасти яйцо, чтобы узнать, кто внутри!
+        Купи яйцо — внутри случайное существо этой редкости. Если оно уже есть у Сони, выпадет
+        его редкая вариация с новым именем и цветом!
       </p>
       <div className="mt-3 grid grid-cols-2 gap-3">
-        {eggs.map((pet) => {
-          const rc = RARITY_COLORS[pet.rarity];
-          const price = EGG_PRICE[pet.rarity];
+        {available.map((rarity) => {
+          const rc = RARITY_COLORS[rarity];
+          const price = EGG_PRICE[rarity];
+          const count = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity).length;
           const affordable = state.profile.coins >= price;
           return (
-            <Card key={pet.id} className="flex flex-col items-center overflow-hidden p-3 text-center">
+            <Card key={rarity} className="flex flex-col items-center overflow-hidden p-3 text-center">
               <div
                 className="flex h-24 w-full items-center justify-center rounded-2xl"
                 style={{ background: `linear-gradient(180deg, ${rc.soft}, #fff)` }}
               >
-                <EggImage pet={pet} size={76} dark />
+                <EggArt rarity={rarity} seed={count * 7} size={76} />
               </div>
-              <p className="mt-2 text-xs font-black text-ink">Неизвестное существо</p>
+              <p className="mt-2 text-xs font-black text-ink">Сюрприз-яйцо</p>
               <Chip className={cn('mt-1 border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
-                {RARITY_LABELS[pet.rarity]}
+                {RARITY_LABELS[rarity]}
               </Chip>
+              <p className="mt-1 text-[10px] font-bold text-ink/40">
+                существ: {count} · рост {formatDuration(EGG_GROW_MS[rarity])}
+              </p>
               <div className="mt-auto flex w-full items-center justify-between pt-2">
                 <Chip className="bg-night px-2 py-1 text-sun">
                   <Coins size={12} /> {price}
                 </Chip>
-                <Button size="sm" variant={affordable ? 'sun' : 'secondary'} onClick={() => setSelected(pet)}>
+                <Button size="sm" variant={affordable ? 'sun' : 'secondary'} onClick={() => setSelected(rarity)}>
                   Купить
                 </Button>
               </div>
@@ -139,27 +136,27 @@ function EggShop() {
           );
         })}
       </div>
-      <BuyEggModal pet={selected} onClose={() => setSelected(null)} />
+      <BuyEggModal rarity={selected} onClose={() => setSelected(null)} />
     </>
   );
 }
 
-function BuyEggModal({ pet, onClose }: { pet: Pet | null; onClose: () => void }) {
+function BuyEggModal({ rarity, onClose }: { rarity: Rarity | null; onClose: () => void }) {
   const state = useAppState();
   const { toast } = useUi();
   const [busy, setBusy] = useState(false);
-  if (!pet) return null;
+  if (!rarity) return null;
 
-  const rc = RARITY_COLORS[pet.rarity];
-  const price = EGG_PRICE[pet.rarity];
+  const rc = RARITY_COLORS[rarity];
+  const price = EGG_PRICE[rarity];
   const coins = state.profile.coins;
   const enough = coins >= price;
 
   const confirm = async () => {
     setBusy(true);
     try {
-      await buyEgg(pet.id);
-      toast('Яйцо куплено! Оно ждёт в «Моих питомцах».', 'success');
+      await buyEgg(rarity);
+      toast('Яйцо куплено! Оно ждёт среди питомцев.', 'success');
       onClose();
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Не получилось купить', 'error');
@@ -169,16 +166,19 @@ function BuyEggModal({ pet, onClose }: { pet: Pet | null; onClose: () => void })
   };
 
   return (
-    <Modal open onClose={onClose} title="Купить яйцо?">
+    <Modal open onClose={onClose} title="Купить сюрприз-яйцо?">
       <div className="flex items-center gap-3">
         <div className="rounded-2xl p-1" style={{ background: rc.soft }}>
-          <EggImage pet={pet} size={64} dark />
+          <EggArt rarity={rarity} seed={1} size={64} />
         </div>
         <div className="text-left">
-          <p className="font-black text-ink">Неизвестное существо</p>
+          <p className="font-black text-ink">Сюрприз-яйцо</p>
           <p className="text-xs font-semibold text-ink/55">
-            Редкость: <span className="font-black" style={{ color: rc.text }}>{RARITY_LABELS[pet.rarity]}</span> ·
-            рост: {formatDuration(EGG_GROW_MS[pet.rarity])}
+            Редкость: <span className="font-black" style={{ color: rc.text }}>{RARITY_LABELS[rarity]}</span> ·
+            рост: {formatDuration(EGG_GROW_MS[rarity])}
+          </p>
+          <p className="mt-0.5 text-[11px] font-bold text-ink/45">
+            Внутри случайное существо — или его редкая вариация!
           </p>
         </div>
       </div>
@@ -191,10 +191,8 @@ function BuyEggModal({ pet, onClose }: { pet: Pet | null; onClose: () => void })
           <span className="text-ink/60">У тебя</span>
           <span className={enough ? 'text-green-600' : 'text-red-500'}>{coins} монет</span>
         </div>
-        {!enough ? (
+        {!enough && (
           <p className="mt-2 text-xs font-bold text-red-500">Не хватает {price - coins} монет. Выполни задания!</p>
-        ) : (
-          <p className="mt-2 text-xs font-bold text-ink/50">Монеты спишутся сразу — мама не подтверждает покупку яиц.</p>
         )}
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">

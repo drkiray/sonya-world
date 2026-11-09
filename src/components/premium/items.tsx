@@ -149,14 +149,8 @@ export function IslandScene({ size = 340, className }: { size?: number; classNam
       <path d="M58 120 Q170 62 282 120 Q274 156 226 168 Q170 178 114 168 Q66 156 58 120Z" fill="url(#is-cliff)" stroke={INK} strokeWidth="3" />
       {/* светлая полоса-отражение на утёсе */}
       <path d="M84 128 Q170 92 256 128 Q232 146 170 148 Q108 146 84 128Z" fill="#fff" opacity="0.18" />
-      {/* свисающие корни/камни */}
-      <path d="M96 152 q4 10 -2 16 M244 150 q-4 12 2 18 M170 172 q0 8 -4 12" stroke="#4A3687" strokeWidth="3" fill="none" strokeLinecap="round" />
-
       {/* лужайка */}
       <path d="M76 118 Q170 76 264 118 Q236 134 170 136 Q104 134 76 118Z" fill="url(#is-grass)" stroke={INK} strokeWidth="2.6" strokeLinejoin="round" />
-
-      {/* тропинка к дому */}
-      <path d="M150 120 Q160 112 170 112 Q180 112 188 120 Q180 128 168 128 Q156 128 150 120Z" fill="#F3DFC2" stroke={INK} strokeWidth="2" />
 
       {/* домик-портал */}
       <g>

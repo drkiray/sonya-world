@@ -336,8 +336,15 @@ export function petHabits(seed: number): string[] {
 
 /** Картинка питомца: ручная премиальная иллюстрация → настоящий ассет → процедурный арт */
 export function PetImage({ pet, size, silhouette, className }: { pet: Pet; size: number; silhouette?: boolean; className?: string }) {
-  const Premium = PREMIUM_PETS[pet.id];
-  if (Premium) return <Premium size={size} silhouette={silhouette} className={className} />;
+  const Premium = PREMIUM_PETS[pet.variantOf ?? pet.id];
+  if (Premium) {
+    const inner = <Premium size={size} silhouette={silhouette} className={className} />;
+    // Вариации перекрашены сдвигом оттенка — визуально новое сочетание цветов
+    if (pet.variantOf && pet.hueShift && !silhouette) {
+      return <div style={{ filter: `hue-rotate(${pet.hueShift}deg)` }}>{inner}</div>;
+    }
+    return inner;
+  }
 
   const asset = useAssetManifest();
   const photo = pet.source === 'custom' ? (pet as { photo?: string }).photo : null;

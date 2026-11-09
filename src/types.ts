@@ -56,6 +56,10 @@ export interface Pet {
   /** Источник каталога, например «Steal an Egg» или «Демо-каталог» */
   catalogOrigin: string | null;
   sourceVerified: boolean;
+  /** id базового существа, если это редкая вариация (выпала повторно из яйца) */
+  variantOf?: string | null;
+  /** Сдвиг оттенка для визуала вариации (градусы) */
+  hueShift?: number;
   createdAt: string;
 }
 

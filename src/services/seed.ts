@@ -51,7 +51,7 @@ export function buildDemoPets(now: string): { pets: Pet[]; ownedIds: string[]; w
     sourceVerified: false,
     createdAt: now,
   }));
-  return { pets, ownedIds: ['demo-02', 'demo-05', 'demo-07'], wantedIds: ['demo-10', 'demo-12'] };
+  return { pets, ownedIds: [], wantedIds: ['demo-10', 'demo-12'] };
 }
 
 export const DEMO_USER_PETS: CustomPet[] = [
