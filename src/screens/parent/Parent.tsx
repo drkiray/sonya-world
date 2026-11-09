@@ -22,6 +22,7 @@ const Overview = lazy(() => import('./ParentOverview'));
 const Quests = lazy(() => import('./ParentQuests'));
 const Rewards = lazy(() => import('./ParentRewards'));
 const Finance = lazy(() => import('./ParentFinance'));
+const Settings = lazy(() => import('./ParentSettings'));
 
 function PinGate() {
   const navigate = useNavigate();
@@ -60,7 +61,7 @@ function PinGate() {
       <p className="mt-6 text-center text-sm font-bold text-white/60">
         Введите PIN-код для входа.
         <br />
-        PIN по умолчанию: <span className="text-sun">1234</span> (сменить в настройках раздела «Финансы»).
+        PIN по умолчанию: <span className="text-sun">1234</span> (сменить во вкладке «Настройки» панели).
       </p>
 
       <div className={`mx-auto mt-8 flex gap-4 ${shake ? 'animate-wiggle' : ''}`}>
@@ -101,26 +102,31 @@ const TABS = [
   { to: '/parent/quests', label: 'Задания' },
   { to: '/parent/rewards', label: 'Награды' },
   { to: '/parent/finance', label: 'Финансы' },
+  { to: '/parent/settings', label: 'Настройки' },
 ];
 
 function ParentShell() {
+  const navigate = useNavigate();
+
+  // Выход из родительской панели: возврат к Соне + закрытие родительского доступа.
+  // После этого снова открыть панель можно только по PIN-коду.
+  const logout = () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    navigate('/', { replace: true });
+  };
+
   return (
     <div className="flex flex-1 flex-col bg-[#EFEAFB]">
       <header className="border-b border-grape/10 bg-white px-4 pb-0 pt-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link to="/" className="rounded-full bg-ink/5 p-1.5 text-ink/60" aria-label="В детский режим">
+            <button onClick={logout} className="rounded-full bg-ink/5 p-1.5 text-ink/60" aria-label="Вернуться к Соне">
               <ArrowLeft size={16} />
-            </Link>
+            </button>
             <p className="text-lg font-black text-ink">Родительская панель</p>
           </div>
-          <button
-            onClick={() => {
-              sessionStorage.removeItem(SESSION_KEY);
-            }}
-            className="text-xs font-bold text-ink/40"
-          >
-            <Link to="/">Выйти</Link>
+          <button onClick={logout} className="rounded-full bg-ink/5 px-3 py-1.5 text-xs font-bold text-ink/50 active:bg-ink/10">
+            Выйти
           </button>
         </div>
         <nav className="mt-3 flex gap-1 overflow-x-auto no-scrollbar">
@@ -142,6 +148,7 @@ function ParentShell() {
             <Route path="quests" element={<Quests />} />
             <Route path="rewards" element={<Rewards />} />
             <Route path="finance" element={<Finance />} />
+            <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/parent/overview" replace />} />
           </Routes>
         </Suspense>

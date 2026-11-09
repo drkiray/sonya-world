@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { ArrowDownLeft, ArrowUpRight, Coins, KeyRound, PencilLine } from 'lucide-react';
+import { ArrowDownLeft, ArrowUpRight, Coins, PencilLine } from 'lucide-react';
 import { useAppState, useUi } from '../../state/AppContext';
-import { adjustBalance, changePin } from '../../services/store';
-import { Card, Chip, Button, Modal } from '../../components/ui';
+import { adjustBalance } from '../../services/store';
+import { Card, Chip, Button } from '../../components/ui';
 import type { Transaction } from '../../types';
 import { cn } from '../../lib/cn';
 
@@ -19,7 +19,6 @@ export default function ParentFinance() {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [busy, setBusy] = useState(false);
-  const [showPin, setShowPin] = useState(false);
 
   const txs = state.transactions;
   const earned = txs.filter((t) => t.amount > 0).reduce((s, t) => s + t.amount, 0);
@@ -100,10 +99,6 @@ export default function ParentFinance() {
         </div>
       </Card>
 
-      <button onClick={() => setShowPin(true)} className="flex w-full items-center gap-2 text-sm font-bold text-grape">
-        <KeyRound size={15} /> Сменить PIN родительского режима
-      </button>
-
       {/* Журнал */}
       <h2 className="text-base font-black text-ink">Журнал операций ({txs.length})</h2>
       {txs.length === 0 ? (
@@ -134,7 +129,6 @@ export default function ParentFinance() {
         </div>
       )}
 
-      <PinModal open={showPin} onClose={() => setShowPin(false)} />
     </div>
   );
 }
@@ -143,36 +137,3 @@ function actorLabel(actor: Transaction['actor']): string {
   return actor === 'parent' ? 'мамы' : actor === 'child' ? 'Сони' : 'системы';
 }
 
-function PinModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { toast } = useUi();
-  const [pin, setPin] = useState('');
-
-  const save = async () => {
-    try {
-      await changePin(pin);
-      toast('PIN изменён', 'success');
-      setPin('');
-      onClose();
-    } catch (e) {
-      toast(e instanceof Error ? e.message : 'Ошибка', 'error');
-    }
-  };
-
-  return (
-    <Modal open={open} onClose={onClose} title="Смена PIN-кода">
-      <p className="text-sm font-semibold text-ink/60">Введите новый PIN из 4 цифр. Запомните его: восстановить нельзя.</p>
-      <input
-        type="password"
-        inputMode="numeric"
-        maxLength={4}
-        value={pin}
-        onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
-        placeholder="••••"
-        className="mt-3 w-full rounded-2xl border-2 border-ink/10 bg-mist px-3 py-3 text-center text-2xl font-black tracking-[0.5em] outline-none focus:border-grape"
-      />
-      <Button size="lg" className="mt-3 w-full" onClick={save} disabled={pin.length !== 4}>
-        Сохранить PIN
-      </Button>
-    </Modal>
-  );
-}
