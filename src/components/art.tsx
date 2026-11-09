@@ -335,13 +335,69 @@ export function petHabits(seed: number): string[] {
 }
 
 /** Картинка питомца: ручная премиальная иллюстрация → настоящий ассет → процедурный арт */
+/** Украшение вариации — рисуется уголком поверх портрета */
+export function VariantAccessory({ type, size = 28 }: { type: string; size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" role="img" aria-label="Украшение" className="drop-shadow-sm">
+      {type === 'bow' && (
+        <g stroke="#21183D" strokeWidth="2" strokeLinejoin="round">
+          <path d="M20 20 L6 12 L6 28 Z" fill="#F38BBF" />
+          <path d="M20 20 L34 12 L34 28 Z" fill="#F38BBF" />
+          <circle cx="20" cy="20" r="5" fill="#FFD45C" />
+        </g>
+      )}
+      {type === 'star' && (
+        <path
+          d="M20 4 L23 16 L36 20 L23 24 L20 36 L17 24 L4 20 L17 16 Z"
+          fill="#FFD45C"
+          stroke="#21183D"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+      )}
+      {type === 'flower' && (
+        <g stroke="#21183D" strokeWidth="1.8">
+          <circle cx="20" cy="11" r="6" fill="#F38BBF" />
+          <circle cx="28.5" cy="16.5" r="6" fill="#F38BBF" />
+          <circle cx="25" cy="26.5" r="6" fill="#F38BBF" />
+          <circle cx="15" cy="26.5" r="6" fill="#F38BBF" />
+          <circle cx="11.5" cy="16.5" r="6" fill="#F38BBF" />
+          <circle cx="20" cy="19.5" r="5" fill="#FFD45C" />
+        </g>
+      )}
+      {type === 'crown' && (
+        <g stroke="#21183D" strokeWidth="2" strokeLinejoin="round">
+          <path d="M8 30 L6 12 L14 20 L20 8 L26 20 L34 12 L32 30 Z" fill="#FFD45C" />
+          <circle cx="20" cy="24" r="2.6" fill="#FF6B6B" stroke="none" />
+        </g>
+      )}
+      {type === 'berry' && (
+        <g stroke="#21183D" strokeWidth="1.8">
+          <circle cx="20" cy="24" r="10" fill="#FF6B6B" />
+          <circle cx="16" cy="21" r="2" fill="#fff" stroke="none" opacity="0.7" />
+          <path d="M20 14 Q22 8 28 7 Q26 13 20 14Z" fill="#4ADE80" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
 export function PetImage({ pet, size, silhouette, className }: { pet: Pet; size: number; silhouette?: boolean; className?: string }) {
   const Premium = PREMIUM_PETS[pet.variantOf ?? pet.id];
   if (Premium) {
     const inner = <Premium size={size} silhouette={silhouette} className={className} />;
     // Вариации перекрашены сдвигом оттенка — визуально новое сочетание цветов
     if (pet.variantOf && pet.hueShift && !silhouette) {
-      return <div style={{ filter: `hue-rotate(${pet.hueShift}deg)` }}>{inner}</div>;
+      return (
+        <div className="relative" style={{ width: size, height: size }}>
+          <div style={{ filter: `hue-rotate(${pet.hueShift}deg)` }}>{inner}</div>
+          {pet.accessory && (
+            <span className="absolute -right-1 -top-1">
+              <VariantAccessory type={pet.accessory} size={Math.max(22, Math.round(size * 0.36))} />
+            </span>
+          )}
+        </div>
+      );
     }
     return inner;
   }

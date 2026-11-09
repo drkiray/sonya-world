@@ -60,6 +60,8 @@ export interface Pet {
   variantOf?: string | null;
   /** Сдвиг оттенка для визуала вариации (градусы) */
   hueShift?: number;
+  /** Украшение вариации: bow | star | flower | crown | berry */
+  accessory?: string;
   createdAt: string;
 }
 

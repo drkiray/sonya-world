@@ -357,11 +357,18 @@ export async function buyEgg(rarity: Rarity): Promise<Pet> {
   const unknownPool = pool.filter((p) => petPhase(p, state.collection[p.id]) === 'unknown');
   const newPets: Pet[] = [];
   let target: Pet;
+  const ownedPool = pool.filter((p) => petPhase(p, state.collection[p.id]) === 'owned');
   if (unknownPool.length > 0) {
     target = unknownPool[Math.floor(Math.random() * unknownPool.length)];
+  } else if (ownedPool.length === 0) {
+    throw new BizError('Существа этой редкости скоро вылупятся — загляни чуть позже!');
   } else {
-    const base = pool[Math.floor(Math.random() * pool.length)];
-    const variant = makeVariant(base, new Set(state.pets.map((p) => p.name.toLowerCase())));
+    const base = ownedPool[Math.floor(Math.random() * ownedPool.length)];
+    const usedHues = [0, ...state.pets.filter((p) => p.variantOf === base.id).map((p) => p.hueShift ?? 0)];
+    const variant = makeVariant(base, {
+      existingNames: new Set(state.pets.map((p) => p.name.toLowerCase())),
+      usedHues,
+    });
     newPets.push(variant);
     target = variant;
   }

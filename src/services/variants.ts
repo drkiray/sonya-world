@@ -1,7 +1,8 @@
 // ─── Генератор вариаций существ ────────────────────────────────────────────
-// Если из яйца выпало существо, которое уже есть в коллекции, рождается
-// вариация: новое имя, перекрашенный визуал, другие характеристики,
-// описание и любимые привычки.
+// Если все существа редкости уже найдены, из яйца рождается вариация:
+// новое имя, оттенок, гарантированно отличающийся от базы и других вариаций,
+// а у части вариаций — ещё и украшение. Характеристики, описание и привычки
+// генерируются от нового сида и тоже уникальны.
 
 import type { Pet } from '../types';
 import { uid } from './db';
@@ -21,7 +22,31 @@ const ADJECTIVES: Array<{ m: string; f: string }> = [
   { m: 'Цветочный', f: 'Цветочная' },
   { m: 'Медовый', f: 'Медовая' },
   { m: 'Снежный', f: 'Снежная' },
+  { m: 'Изумрудный', f: 'Изумрудная' },
+  { m: 'Рубиновый', f: 'Рубиновая' },
+  { m: 'Сапфировый', f: 'Сапфировая' },
+  { m: 'Аметистовый', f: 'Аметистовая' },
+  { m: 'Пепельный', f: 'Пепельная' },
+  { m: 'Медный', f: 'Медная' },
+  { m: 'Жемчужный', f: 'Жемчужная' },
+  { m: 'Огненный', f: 'Огненная' },
+  { m: 'Ледяной', f: 'Ледяная' },
+  { m: 'Бархатный', f: 'Бархатная' },
+  { m: 'Шёлковый', f: 'Шёлковая' },
+  { m: 'Полосатый', f: 'Полосатая' },
+  { m: 'Пятнистый', f: 'Пятнистая' },
+  { m: 'Пушистый', f: 'Пушистая' },
+  { m: 'Хмельной', f: 'Хмельная' },
+  { m: 'Смородиновый', f: 'Смородиновая' },
 ];
+
+const TITLES: Record<'m' | 'f', string[]> = {
+  m: ['Капитан', 'Профессор', 'Мастер', 'Сэр', 'Доктор', 'Шеф', 'Агент', 'Маг', 'Король', 'Следопыт'],
+  f: ['Капитан', 'Профессор', 'Мастер', 'Мадам', 'Доктор', 'Фея', 'Леди', 'Принцесса', 'Королева', 'Следопытка'],
+};
+
+/** Украшения вариаций — рисуются поверх портрета */
+export const VARIANT_ACCESSORIES = ['bow', 'star', 'flower', 'crown', 'berry'] as const;
 
 const FEMININE_NOUNS = new Set(['единорожка', 'невидимка', 'тень']);
 
@@ -36,6 +61,11 @@ const PLACES = [
   'тёплых тропиках',
   'звёздном лугу',
   'берегу звенящего ручья',
+  'вершине вишнёвой горы',
+  'подводном лесу',
+  'поле одуванчиков',
+  'медовых лугах',
+  'одиноком айсберге',
 ];
 
 const HABITS = [
@@ -47,6 +77,12 @@ const HABITS = [
   'подпевать птицам',
   'прятать сокровища в шкафу',
   'танцевать, когда идёт дождь',
+  'ловить солнечных зайчиков',
+  'плести венки из одуванчиков',
+  'учить стрекоз иностранным словам',
+  'устраивать парады для муравьёв',
+  'грезить наяву в гамаке',
+  'облизывать капли мёда с ложки',
 ];
 
 function nounOf(baseName: string): string {
@@ -71,20 +107,46 @@ function hashStr(s: string): number {
   return Math.abs(h);
 }
 
-/** Придумывает вариацию базового существа: имя, описание, новый сид и оттенок */
-export function makeVariant(base: Pet, existingNames: Set<string>): Pet {
+/** Угловое расстояние между оттенками (0–180) */
+function hueDist(a: number, b: number): number {
+  const d = Math.abs(a - b) % 360;
+  return d > 180 ? 360 - d : d;
+}
+
+export interface VariantContext {
+  existingNames: Set<string>;
+  /** Оттенки, которые уже заняты базой (0) и её вариациями */
+  usedHues: number[];
+}
+
+/** Придумывает вариацию базового существа: уникальное имя, отличный оттенок,
+ *  иногда украшение, новые характеристики, описание и привычки */
+export function makeVariant(base: Pet, ctx: VariantContext): Pet {
   const id = uid();
   const rnd = mulberry(hashStr(id));
   const noun = nounOf(base.name);
   const feminine = FEMININE_NOUNS.has(noun) || noun.endsWith('жка') || noun.endsWith('нька');
+  const gender: 'm' | 'f' = feminine ? 'f' : 'm';
 
-  // имя: прилагательное + существительное базы, гарантированно уникальное
+  // имя: прилагательное+существительное (чаще) или титул+существительное; без повторов
   let name = base.name;
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const adj = ADJECTIVES[Math.floor(rnd() * ADJECTIVES.length)];
-    const candidate = `${feminine ? adj.f : adj.m} ${noun}`;
-    if (!existingNames.has(candidate.toLowerCase())) {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const useTitle = rnd() < 0.3;
+    const candidate = useTitle
+      ? `${TITLES[gender][Math.floor(rnd() * TITLES[gender].length)]} ${noun}`
+      : `${ADJECTIVES[Math.floor(rnd() * ADJECTIVES.length)][gender]} ${noun}`;
+    if (!ctx.existingNames.has(candidate.toLowerCase())) {
       name = candidate;
+      break;
+    }
+  }
+
+  // оттенок: минимум 50° от базы и от каждой существующей вариации
+  let hue = 40 + Math.floor(rnd() * 280);
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const candidate = Math.floor(rnd() * 360);
+    if (ctx.usedHues.every((h) => hueDist(candidate, h) >= 50)) {
+      hue = candidate;
       break;
     }
   }
@@ -96,8 +158,12 @@ export function makeVariant(base: Pet, existingNames: Set<string>): Pet {
     `Дальний родственник «${base.name}». Говорят, что он живёт в ${place}.`,
     `Редкая вариация «${base.name}». Любит ${habit} и прогулки по ${place}.`,
     `Потомок «${base.name}», в котором проснулся дух приключений. Любит ${habit}.`,
+    `Особый вид «${base.name}». Местные жители замечают его в ${place}.`,
+    `Редчайшая вариация «${base.name}». По легенде, он поселился в ${place}.`,
   ];
   const description = templates[Math.floor(rnd() * templates.length)];
+
+  const accessory = rnd() < 0.45 ? VARIANT_ACCESSORIES[Math.floor(rnd() * VARIANT_ACCESSORIES.length)] : undefined;
 
   return {
     id,
@@ -112,7 +178,8 @@ export function makeVariant(base: Pet, existingNames: Set<string>): Pet {
     catalogOrigin: base.catalogOrigin,
     sourceVerified: false,
     variantOf: base.id,
-    hueShift: 40 + Math.floor(rnd() * 280),
+    hueShift: hue,
+    accessory,
     createdAt: new Date().toISOString(),
   };
 }

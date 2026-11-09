@@ -129,6 +129,16 @@ export default function Collection() {
             {filtered.map((p) => (
               <PetCard key={p.id} pet={p} />
             ))}
+            <Link
+              to="/collection/new"
+              className="flex min-h-[210px] flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-grape/40 bg-white/50 p-4 text-center transition active:scale-[0.97]"
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-grape/10 text-grape">
+                <Plus size={30} />
+              </span>
+              <p className="text-sm font-black leading-tight text-grape">Завести своего питомца</p>
+              <p className="text-[11px] font-semibold text-ink/40">Сфотографируй или придумай</p>
+            </Link>
           </div>
         )}
       </main>
