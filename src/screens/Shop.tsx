@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Coins, PackageCheck, ShoppingBag } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
-import { buyEgg, EGG_GROW_MS, EGG_PRICE, petPhase, requestReward } from '../services/store';
+import { buyEgg, eggGrowMs, EGG_PRICE, petPhase, requestReward } from '../services/store';
 import { EggArt, RewardArt, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { CoinChip } from '../components/StatusChips';
 import { Button, Card, Chip, EmptyState, Modal, ProgressBar, Segmented } from '../components/ui';
@@ -119,7 +119,7 @@ function EggShop() {
                 {RARITY_LABELS[rarity]}
               </Chip>
               <p className="mt-1 text-[10px] font-bold text-ink/40">
-                существ: {count} · рост {formatDuration(EGG_GROW_MS[rarity])}
+                существ: {count} · рост {formatDuration(eggGrowMs(rarity))}
               </p>
               <div className="mt-auto flex w-full items-center justify-between pt-2">
                 <Chip className="bg-night px-2 py-1 text-sun">
@@ -175,7 +175,7 @@ function BuyEggModal({ rarity, onClose }: { rarity: Rarity | null; onClose: () =
           <p className="font-black text-ink">Сюрприз-яйцо</p>
           <p className="text-xs font-semibold text-ink/55">
             Редкость: <span className="font-black" style={{ color: rc.text }}>{RARITY_LABELS[rarity]}</span> ·
-            рост: {formatDuration(EGG_GROW_MS[rarity])}
+            рост: {formatDuration(eggGrowMs(rarity))}
           </p>
           <p className="mt-0.5 text-[11px] font-bold text-ink/45">
             Внутри случайное существо — или его редкая вариация!

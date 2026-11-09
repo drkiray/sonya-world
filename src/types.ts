@@ -208,6 +208,8 @@ export interface Profile {
   soundEnabled: boolean;
   /** Собственная фотография-аватар (dataURL), выбранная в профиле */
   avatarPhoto?: string | null;
+  /** Режим разработчика: яйца вылупляются за 1 секунду (настройка мамы) */
+  devMode?: boolean;
 }
 
 export interface AppMeta {

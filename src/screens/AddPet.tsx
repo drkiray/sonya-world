@@ -91,13 +91,14 @@ export default function AddPet() {
             ref={fileRef}
             type="file"
             accept="image/*"
+            capture="environment"
             className="hidden"
             onChange={async (e) => {
               const f = e.target.files?.[0];
               if (f) setPhoto(await readPhoto(f));
             }}
           />
-          <p className="text-xs font-bold text-ink/50">Фотография питомца (необязательно)</p>
+          <p className="text-xs font-bold text-ink/50">Сфотографируй питомца прямо сейчас (необязательно)</p>
         </Card>
 
         <Card className="space-y-3 p-4">

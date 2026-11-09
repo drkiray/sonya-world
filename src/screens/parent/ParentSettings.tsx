@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Download, FileUp, KeyRound, PencilLine, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import { Bug, Download, FileUp, KeyRound, PencilLine, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useAppState, useUi } from '../../state/AppContext';
 import { changePin, importCatalog, resetDemoData, updateProfile } from '../../services/store';
 import { parseCatalogJson } from '../../services/catalog';
@@ -68,6 +68,26 @@ export default function ParentSettings() {
         <button className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5" onClick={() => setShowPin(true)}>
           <KeyRound className="text-grape" size={20} />
           <span className="flex-1 text-sm font-black text-ink">Сменить PIN-код</span>
+        </button>
+
+        <button
+          className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5"
+          onClick={async () => {
+            const devMode = !profile.devMode;
+            await updateProfile(devMode ? { devMode, coins: 10000 } : { devMode });
+            toast(
+              devMode
+                ? 'Режим разработчика включён: яйца вылупляются за 1 секунду, на балансе 10000 монет'
+                : 'Режим разработчика выключен',
+              'success',
+            );
+          }}
+        >
+          <Bug className={profile.devMode ? 'text-green-600' : 'text-ink/40'} size={20} />
+          <span className="flex-1 text-sm font-black text-ink">Режим разработчика</span>
+          <Chip className={profile.devMode ? 'bg-green-100 text-green-700' : 'bg-ink/5 text-ink/50'}>
+            {profile.devMode ? 'Вкл' : 'Выкл'}
+          </Chip>
         </button>
 
         <button className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5" onClick={() => setConfirmReset(true)}>

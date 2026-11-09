@@ -10,7 +10,7 @@ export function Button({
   className,
   ...props
 }: ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'sun';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'sun' | 'nature';
   size?: 'sm' | 'md' | 'lg';
 }) {
   return (
@@ -22,6 +22,7 @@ export function Button({
         size === 'lg' && 'px-5 py-3.5 text-lg',
         variant === 'primary' && 'bg-grape text-white shadow-pop',
         variant === 'sun' && 'bg-sun text-night shadow-card',
+        variant === 'nature' && 'bg-green-500 text-white shadow-card',
         variant === 'secondary' && 'bg-white text-grape border-2 border-grape/20 shadow-card',
         variant === 'ghost' && 'bg-grape/10 text-grape',
         variant === 'danger' && 'bg-red-100 text-red-700 border-2 border-red-200',

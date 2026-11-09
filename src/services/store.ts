@@ -315,6 +315,11 @@ export const EGG_PRICE: Record<Rarity, number> = {
   'Божественная': 500,
 };
 
+/** Фактическое время роста яйца: в режиме разработчика — 1 секунда */
+export function eggGrowMs(rarity: Rarity): number {
+  return state.profile.devMode ? 1000 : EGG_GROW_MS[rarity];
+}
+
 export type PetPhase = 'unknown' | 'egg' | 'growing' | 'owned';
 
 /** Текущая фаза существа: загадка (нет яйца) → яйцо → растёт → появился */
@@ -398,7 +403,7 @@ export async function startGrowing(petId: string): Promise<void> {
     id: petId,
     petId,
     status: 'growing',
-    hatchAt: new Date(Date.now() + EGG_GROW_MS[pet.rarity]).toISOString(),
+    hatchAt: new Date(Date.now() + eggGrowMs(pet.rarity)).toISOString(),
     updatedAt: new Date().toISOString(),
   };
   await idb.put('collection', updated);
@@ -433,6 +438,31 @@ export async function evaluateHatching(): Promise<Pet[]> {
   playSound('achievement');
   await evaluateAchievements();
   return due;
+}
+
+/** Отпустить питомца на волю: свои и вариации исчезают совсем,
+ *  базовые существа возвращаются в пул — снова могут выпасть из яйца. */
+export async function releasePet(petId: string): Promise<void> {
+  const pet = state.pets.find((p) => p.id === petId);
+  if (!pet) throw new BizError('Питомец не найден');
+  const entry = state.collection[petId];
+  if (!entry || entry.status !== 'owned') throw new BizError('Отпустить можно только найденного питомца');
+
+  const removePet = pet.source === 'custom' || Boolean(pet.variantOf);
+  await idb.batch(
+    [],
+    removePet
+      ? [
+          { store: 'pets', id: petId },
+          { store: 'collection', id: petId },
+        ]
+      : [{ store: 'collection', id: petId }],
+  );
+  const pets = removePet ? state.pets.filter((p) => p.id !== petId) : state.pets;
+  const collection = { ...state.collection };
+  delete collection[petId];
+  setState({ pets, collection });
+  await evaluateAchievements();
 }
 
 // ─── Импорт каталога ───────────────────────────────────────────────────────

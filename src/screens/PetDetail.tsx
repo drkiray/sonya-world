@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Egg as EggIcon, Heart, Hourglass, Sparkles, Trash2 } from 'lucide-react';
+import { ArrowLeft, DoorOpen, Egg as EggIcon, Heart, Hourglass, Sparkles } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
-import { deleteCustomPet, EGG_GROW_MS, petPhase, startGrowing, toggleFavorite } from '../services/store';
+import { eggGrowMs, petPhase, releasePet, startGrowing, toggleFavorite } from '../services/store';
 import { EggArt, PetImage, petHabits, petStats, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { Button, Card, Chip, Modal, ProgressBar } from '../components/ui';
 import type { CustomPet, Pet } from '../types';
@@ -65,7 +65,7 @@ export default function PetDetail() {
   const revealed = phase === 'owned';
 
   const hatchAt = entry?.hatchAt ? Date.parse(entry.hatchAt) : 0;
-  const total = EGG_GROW_MS[pet.rarity];
+  const total = eggGrowMs(pet.rarity);
   const remaining = phase === 'growing' ? Math.max(0, hatchAt - Date.now()) : 0;
   const progress = phase === 'growing' ? 1 - remaining / total : 0;
 
@@ -231,26 +231,30 @@ export default function PetDetail() {
           )}
         </Card>
 
-        {custom && (
-          <Button variant="danger" className="mt-4 w-full" onClick={() => setConfirmDelete(true)}>
-            <Trash2 size={16} /> Удалить питомца
+        {revealed && (
+          <Button variant="nature" className="mt-4 w-full" onClick={() => setConfirmDelete(true)}>
+            <DoorOpen size={16} /> Отпустить на волю
           </Button>
         )}
       </main>
 
-      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Удалить питомца?">
-        <p className="text-sm font-semibold text-ink/70">{pet.name} исчезнет из альбома навсегда.</p>
+      <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Отпустить на волю?">
+        <p className="text-sm font-semibold text-ink/70">
+          {custom || pet.variantOf
+            ? `${pet.name} отправится в большой мир и исчезнет из питомника навсегда.`
+            : `${pet.name} вернётся в дикие яйца — он сможет снова выпасть из яйца в будущем.`}
+        </p>
         <div className="mt-4 grid grid-cols-2 gap-2">
           <Button variant="secondary" onClick={() => setConfirmDelete(false)}>Оставить</Button>
           <Button
-            variant="danger"
+            variant="nature"
             onClick={async () => {
-              await deleteCustomPet(pet.id);
-              toast('Питомец удалён');
+              await releasePet(pet.id);
+              toast(`${pet.name} отпущен на волю`);
               navigate('/collection');
             }}
           >
-            Удалить
+            Отпустить
           </Button>
         </div>
       </Modal>
