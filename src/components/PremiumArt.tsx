@@ -5,6 +5,7 @@
 
 import type { ReactElement } from 'react';
 import {
+  OwlArt,
   FluffballArt,
   HedgehogArt,
   RockArt,
@@ -153,6 +154,7 @@ export function UnicornArt({ size = 160, silhouette = false, className }: Premiu
 
 /** Реестр премиальных иллюстраций: id питомца → компонент */
 export const PREMIUM_PETS: Record<string, (p: PremiumProps) => ReactElement> = {
+  'owl-yarik': OwlArt,
   'demo-01': FluffballArt,
   'demo-02': HedgehogArt,
   'demo-03': RockArt,

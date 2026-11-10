@@ -36,6 +36,33 @@ const DEMO_PETS: DemoPetDef[] = [
   { id: 'demo-12', name: 'Тень-невидимка', rarity: 'Божественная', category: 'Магические', seed: 132, description: 'Его никто не видел, но все чувствуют, когда он доволен: пахнет печеньем.' },
 ];
 
+/** Особый питомец: Сова дяди Ярика — почтовый помощник, живёт у Сони с самого начала */
+export const OWL_PET: CustomPet = {
+  id: 'owl-yarik',
+  name: 'Сова дяди Ярика',
+  rarity: 'Эпическая',
+  category: 'Почтовые',
+  description: 'Особый почтовый питомец. Доставляет письма дяде Ярику и следит, чтобы все идеи Сони до него доходили.',
+  imageUrl: null,
+  artSeed: 777,
+  source: 'custom',
+  isDemo: false,
+  catalogOrigin: null,
+  sourceVerified: true,
+  note: 'Этого питомца нельзя отпустить — он нужен для важной почты!',
+  photo: null,
+  special: true,
+  createdAt: new Date().toISOString(),
+};
+
+/** Одноразовые задания, которые появляются у всех (включая уже установленные устройства) */
+export function buildOneTimeQuests(now: string): Quest[] {
+  return [
+    { id: 'quest-avatar', title: 'Поставь новую аватарку', description: 'Зайди в «Это я!», нажми на свою аватарку и выбери новую или сфотографируй себя.', category: 'creative', difficulty: 'easy', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: false, oneTime: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-letter', title: 'Отправь письмо дяде Ярику', description: 'Открой карточку Совы дяди Ярика среди питомцев и напиши ей письмо с идеями для игры.', category: 'special', difficulty: 'medium', rewardCoins: 20, rewardXp: 20, enabled: true, isDemo: false, oneTime: true, lastCompletedOn: null, createdAt: now },
+  ];
+}
+
 export function buildDemoPets(now: string): { pets: Pet[]; ownedIds: string[]; wantedIds: string[] } {
   const pets: Pet[] = DEMO_PETS.map((d) => ({
     id: d.id,
@@ -75,11 +102,11 @@ export const DEMO_USER_PETS: CustomPet[] = [
 
 export function buildDemoQuests(now: string): Quest[] {
   return [
-    { id: 'quest-demo-01', title: 'Найди нового питомца', description: 'Открой альбом и найди питомца, которого ещё нет у Сони. Расскажи, что он умеет.', category: 'daily', difficulty: 'easy', rewardCoins: 5, rewardXp: 5, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
-    { id: 'quest-demo-02', title: 'Добавь питомца в альбом', description: 'Слепи, нарисуй или придумай своего питомца и добавь его через форму «Мой питомец».', category: 'daily', difficulty: 'medium', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
-    { id: 'quest-demo-03', title: 'Найди питомца редкости «Эпическая» или выше', description: 'Посмотри в энциклопедии, каких редких питомцев можно отыскать, и напиши, кого хочешь поймать.', category: 'special', difficulty: 'hard', rewardCoins: 20, rewardXp: 20, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
-    { id: 'quest-demo-04', title: 'Нарисуй собственное яйцо', description: 'Придумай и нарисуй яйцо будущего питомца. Сфотографируй рисунок и прикрепи к заданию.', category: 'creative', difficulty: 'medium', rewardCoins: 15, rewardXp: 15, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
-    { id: 'quest-demo-05', title: 'Придумай историю питомца', description: 'Выбери любимого питомца и расскажи, откуда он прилетел и чем любит заниматься.', category: 'family', difficulty: 'easy', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-demo-01', title: 'Найди нового питомца', description: 'Открой альбом и найди питомца, которого ещё нет у Сони. Расскажи, что он умеет.', category: 'daily', difficulty: 'easy', rewardCoins: 5, rewardXp: 5, enabled: true, isDemo: true, oneTime: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-demo-02', title: 'Добавь питомца в альбом', description: 'Слепи, нарисуй или придумай своего питомца и добавь его через форму «Мой питомец».', category: 'daily', difficulty: 'medium', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: true, oneTime: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-demo-03', title: 'Найди питомца редкости «Эпическая» или выше', description: 'Посмотри в энциклопедии, каких редких питомцев можно отыскать, и напиши, кого хочешь поймать.', category: 'special', difficulty: 'hard', rewardCoins: 20, rewardXp: 20, enabled: true, isDemo: true, oneTime: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-demo-04', title: 'Нарисуй собственное яйцо', description: 'Придумай и нарисуй яйцо будущего питомца. Сфотографируй рисунок и прикрепи к заданию.', category: 'creative', difficulty: 'medium', rewardCoins: 15, rewardXp: 15, enabled: true, isDemo: true, oneTime: true, lastCompletedOn: null, createdAt: now },
+    { id: 'quest-demo-05', title: 'Придумай историю питомца', description: 'Выбери любимого питомца и расскажи, откуда он прилетел и чем любит заниматься.', category: 'family', difficulty: 'easy', rewardCoins: 10, rewardXp: 10, enabled: true, isDemo: true, oneTime: true, lastCompletedOn: null, createdAt: now },
   ];
 }
 

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, DoorOpen, Egg as EggIcon, Heart, Hourglass, Sparkles } from 'lucide-react';
+import { ArrowLeft, DoorOpen, Egg as EggIcon, Heart, Hourglass, Mail, Send, Sparkles } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
-import { eggGrowMs, petPhase, releasePet, startGrowing, toggleFavorite } from '../services/store';
+import { eggGrowMs, petPhase, releasePet, sendLetterToYarik, startGrowing, submitQuest, toggleFavorite } from '../services/store';
 import { EggArt, PetImage, petHabits, petStats, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { Button, Card, Chip, Modal, ProgressBar } from '../components/ui';
 import type { CustomPet, Pet } from '../types';
@@ -35,6 +35,7 @@ export default function PetDetail() {
   const { toast } = useUi();
   const state = useAppState();
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showLetter, setShowLetter] = useState(false);
   const [, setTick] = useState(0);
 
   const pet = state.pets.find((p) => p.id === id);
@@ -225,12 +226,19 @@ export default function PetDetail() {
           )}
         </Card>
 
-        {revealed && (
+        {revealed && pet.special && (
+          <Button variant="sun" className="mt-4 w-full" onClick={() => setShowLetter(true)}>
+            <Mail size={16} /> Отправить письмо дяде Ярику
+          </Button>
+        )}
+        {revealed && !pet.special && (
           <Button variant="nature" className="mt-4 w-full" onClick={() => setConfirmDelete(true)}>
             <DoorOpen size={16} /> Отпустить на волю
           </Button>
         )}
       </main>
+
+      <LetterModal open={showLetter} onClose={() => setShowLetter(false)} />
 
       <Modal open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Отпустить на волю?">
         <p className="text-sm font-semibold text-ink/70">
@@ -253,5 +261,54 @@ export default function PetDetail() {
         </div>
       </Modal>
     </div>
+  );
+}
+
+/** Окошко письма дяде Ярику — отправляется через Telegram-бота (настраивает мама) */
+function LetterModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const state = useAppState();
+  const { toast } = useUi();
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const send = async () => {
+    setBusy(true);
+    try {
+      await sendLetterToYarik(text);
+      // задание «Отправь письмо дяде Ярику» уходит маме на проверку автоматически
+      const letterQuest = state.quests.find((q) => q.id === 'quest-letter');
+      if (letterQuest) {
+        try {
+          await submitQuest(letterQuest.id, text.trim(), null);
+        } catch {
+          /* задание уже на проверке — не страшно */
+        }
+      }
+      toast('Письмо улетело к дяде Ярику!', 'success');
+      setText('');
+      onClose();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : 'Не получилось отправить', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title="Письмо дяде Ярику">
+      <p className="text-sm font-semibold text-ink/60">
+        Напиши дяде Ярику любые идеи: что добавить в игру, кого из питомцев хочешь, что улучшить. Он всё прочитает!
+      </p>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={5}
+        placeholder="Дядя Ярик, я хочу…"
+        className="mt-3 w-full resize-none rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm font-semibold outline-none focus:border-grape"
+      />
+      <Button size="lg" variant="sun" className="mt-3 w-full" onClick={send} disabled={busy || !text.trim()}>
+        <Send size={16} /> {busy ? 'Отправляем…' : 'Отправить письмо'}
+      </Button>
+    </Modal>
   );
 }

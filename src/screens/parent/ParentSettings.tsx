@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Bug, Download, FileUp, KeyRound, PencilLine, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import { Bug, Download, FileUp, KeyRound, PencilLine, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useAppState, useUi } from '../../state/AppContext';
-import { changePin, importCatalog, resetDemoData, updateProfile } from '../../services/store';
+import { changePin, importCatalog, resetDemoData, saveTelegramSettings, updateProfile } from '../../services/store';
 import { parseCatalogJson } from '../../services/catalog';
 import { Button, Card, Chip, Modal } from '../../components/ui';
 
@@ -89,6 +89,17 @@ export default function ParentSettings() {
             {profile.devMode ? 'Вкл' : 'Выкл'}
           </Chip>
         </button>
+
+      <Card className="p-4">
+        <p className="flex items-center gap-2 text-sm font-black text-ink">
+          <Send size={16} className="text-grape" /> Письма дяде Ярику (Telegram)
+        </p>
+        <p className="mt-1 text-xs font-semibold text-ink/50">
+          Чтобы письма Сони приходили вам в Telegram: создайте бота через @BotFather, вставьте токен
+          и ваш chat id (узнать можно через @userinfobot).
+        </p>
+        <TelegramForm />
+      </Card>
 
         <button className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5" onClick={() => setConfirmReset(true)}>
           <Sparkles className="text-ink/40" size={20} />
@@ -200,5 +211,45 @@ function ImportModal({ open, onClose }: { open: boolean; onClose: () => void }) 
         <FileUp size={16} /> {busy ? 'Импортируем…' : 'Импортировать'}
       </Button>
     </Modal>
+  );
+}
+
+function TelegramForm() {
+  const state = useAppState();
+  const { toast } = useUi();
+  const [token, setToken] = useState(state.meta.telegramBotToken ?? '');
+  const [chatId, setChatId] = useState(state.meta.telegramChatId ?? '');
+  const [busy, setBusy] = useState(false);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await saveTelegramSettings(token, chatId);
+      toast('Настройки Telegram сохранены', 'success');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-3 space-y-2">
+      <input
+        value={token}
+        onChange={(e) => setToken(e.target.value)}
+        placeholder="Токен бота, например 7123456789:AAH…"
+        autoComplete="off"
+        className="w-full rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 font-mono text-xs outline-none focus:border-grape"
+      />
+      <input
+        value={chatId}
+        onChange={(e) => setChatId(e.target.value)}
+        placeholder="Chat id, например 123456789"
+        autoComplete="off"
+        className="w-full rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 font-mono text-xs outline-none focus:border-grape"
+      />
+      <Button size="sm" className="w-full" onClick={save} disabled={busy}>
+        Сохранить
+      </Button>
+    </div>
   );
 }

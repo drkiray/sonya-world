@@ -9,7 +9,9 @@ import {
   buildDemoRewards,
   buildInitialMeta,
   buildInitialProfile,
+  buildOneTimeQuests,
   buildSonyaQuests,
+  OWL_PET,
 } from './seed';
 import { ACHIEVEMENTS, checkAchievements } from './achievements';
 import { playSound } from './sound';
@@ -191,6 +193,49 @@ export async function initStore(): Promise<void> {
     loaded = { ...loaded, rewards: [...keep, ...fresh] };
   }
 
+  // Сова дяди Ярика: у всех с самого начала
+  if (!loaded.pets.some((p) => p.id === OWL_PET.id)) {
+    const entry: CollectionEntry & { id: string } = {
+      id: OWL_PET.id,
+      petId: OWL_PET.id,
+      status: 'owned',
+      favorite: false,
+      hatchAt: null,
+      updatedAt: new Date().toISOString(),
+    };
+    await idb.batch([
+      { store: 'pets', value: OWL_PET },
+      { store: 'collection', value: entry },
+    ]);
+    loaded = {
+      ...loaded,
+      pets: [...loaded.pets, OWL_PET],
+      collection: { ...loaded.collection, [OWL_PET.id]: entry },
+    };
+  }
+
+  // Одноразовые задания: пометить старые и подхватить новые
+  const nowIso = new Date().toISOString();
+  const oneTimeWrites: Array<{ store: 'quests'; value: Quest }> = [];
+  const questsPatched = loaded.quests.map((q) => {
+    if (q.id.startsWith('quest-demo-') && !q.oneTime) {
+      const patched = { ...q, oneTime: true };
+      oneTimeWrites.push({ store: 'quests', value: patched });
+      return patched;
+    }
+    return q;
+  });
+  for (const q of buildOneTimeQuests(nowIso)) {
+    if (!loaded.quests.some((x) => x.id === q.id)) {
+      oneTimeWrites.push({ store: 'quests', value: q });
+      questsPatched.push(q);
+    }
+  }
+  if (oneTimeWrites.length > 0) {
+    await idb.batch(oneTimeWrites);
+    loaded = { ...loaded, quests: questsPatched };
+  }
+
   // Подхват заданий Сони на уже установленных устройствах
   const now = new Date().toISOString();
   const missing = buildSonyaQuests(now).filter((q) => !loaded.quests.some((x) => x.id === q.id));
@@ -221,6 +266,11 @@ async function seedDemoData(): Promise<void> {
       store: 'collection' as const,
       value: { id, petId: id, status: 'not_found' as CollectionStatus, favorite: id === 'demo-10', updatedAt: now },
     })),
+    { store: 'pets' as const, value: OWL_PET },
+    {
+      store: 'collection' as const,
+      value: { id: OWL_PET.id, petId: OWL_PET.id, status: 'owned' as CollectionStatus, favorite: false, updatedAt: now },
+    },
     ...quests.map((q) => ({ store: 'quests' as const, value: q })),
     ...rewards.map((r) => ({ store: 'rewards' as const, value: r })),
   ];
@@ -497,6 +547,7 @@ export async function releasePet(petId: string): Promise<void> {
   if (!pet) throw new BizError('Питомец не найден');
   const entry = state.collection[petId];
   if (!entry || entry.status !== 'owned') throw new BizError('Отпустить можно только найденного питомца');
+  if (pet.special) throw new BizError('Этого питомца нельзя отпустить — он особенный!');
 
   const removePet = pet.source === 'custom' || Boolean(pet.variantOf);
   await idb.batch(
@@ -656,11 +707,16 @@ export async function reviewSubmission(submissionId: string, approve: boolean, p
     writes.push(
       { store: 'transactions', value: txRecord },
       { store: 'profile', value: { id: PROFILE_ID, ...profile } },
-      { store: 'quests', value: questUpdated },
     );
     newState.transactions = [txRecord, ...state.transactions];
     newState.profile = profile;
-    newState.quests = state.quests.map((q) => (q.id === quest.id ? questUpdated : q));
+    writes.push({ store: 'quests', value: questUpdated });
+    if (quest.oneTime) {
+      // одноразовое задание исчезает после подтверждения
+      newState.quests = state.quests.filter((q) => q.id !== quest.id);
+    } else {
+      newState.quests = state.quests.map((q) => (q.id === quest.id ? questUpdated : q));
+    }
   }
 
   await idb.batch(writes);
@@ -789,6 +845,29 @@ export async function updateProfile(patch: Partial<Profile>): Promise<void> {
   const profile = { ...state.profile, ...patch };
   await persistProfile(profile);
   setState({ profile });
+}
+
+export async function saveTelegramSettings(botToken: string, chatId: string): Promise<void> {
+  const meta = { ...state.meta, telegramBotToken: botToken.trim(), telegramChatId: chatId.trim() };
+  await persistMeta(meta);
+  setState({ meta });
+}
+
+/** Отправка письма дяде Ярику через Telegram-бота мамы */
+export async function sendLetterToYarik(message: string): Promise<void> {
+  const text = message.trim();
+  if (!text) throw new BizError('Напиши хоть пару слов!');
+  const token = state.meta.telegramBotToken;
+  const chatId = state.meta.telegramChatId;
+  if (!token || !chatId) {
+    throw new BizError('Мама ещё не настроила отправку писем: Родительская панель → Настройки → Telegram-бот');
+  }
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: `✉️ Письмо от Сони (Мир Сонечки):\n\n${text}` }),
+  });
+  if (!res.ok) throw new BizError('Не получилось отправить письмо. Попробуй позже.');
 }
 
 export async function verifyPin(pin: string): Promise<boolean> {

@@ -8,12 +8,11 @@ import { Card, Chip, EmptyState, Segmented } from '../components/ui';
 import type { CollectionStatus, Pet } from '../types';
 import { cn } from '../lib/cn';
 
-type Filter = 'all' | 'owned' | 'eggs' | 'missing' | 'favorite';
+type Filter = 'eggs' | 'pets' | 'missing' | 'favorite';
 
 const FILTERS: Array<{ value: Filter; label: string }> = [
-  { value: 'all', label: 'Все' },
-  { value: 'owned', label: 'Найденные' },
   { value: 'eggs', label: 'Яйца' },
+  { value: 'pets', label: 'Питомцы' },
   { value: 'missing', label: 'Не найдены' },
   { value: 'favorite', label: 'Избранное' },
 ];
@@ -37,7 +36,7 @@ export function EggImage({ pet, size = 96, dark = false }: { pet: Pet; size?: nu
 /** Единый питомник: энциклопедические существа, вариации из яиц и свои питомцы */
 export default function Collection() {
   const state = useAppState();
-  const [filter, setFilter] = useState<Filter>('all');
+  const [filter, setFilter] = useState<Filter>('pets');
   const [query, setQuery] = useState('');
 
   const list = useMemo(() => {
@@ -52,7 +51,7 @@ export default function Collection() {
     const q = query.trim().toLowerCase();
     return list.filter((p) => {
       const phase = petPhase(p, state.collection[p.id]);
-      if (filter === 'owned' && phase !== 'owned') return false;
+      if (filter === 'pets' && phase !== 'owned') return false;
       if (filter === 'eggs' && phase !== 'egg' && phase !== 'growing') return false;
       if (filter === 'missing' && phase !== 'unknown') return false;
       if (filter === 'favorite' && !state.collection[p.id]?.favorite) return false;
@@ -106,11 +105,21 @@ export default function Collection() {
             <EmptyState
               art={<Egg size={64} className="text-grape" />}
               title="Пока пусто"
-              text="Купи яйцо в магазине или добавь своего питомца!"
+              text={
+                filter === 'eggs'
+                  ? 'Купи яйцо в магазине — оно появится здесь!'
+                  : filter === 'missing'
+                    ? 'Все существа найдены! Новые скоро появятся.'
+                    : filter === 'favorite'
+                      ? 'Нажми на сердечко у питомца — и он попадёт сюда.'
+                      : 'Вырасти яйцо или добавь своего питомца!'
+              }
               action={
-                <Link to="/shop" className="rounded-2xl bg-grape px-4 py-2 text-sm font-black text-white">
-                  Купить яйцо
-                </Link>
+                filter === 'eggs' || filter === 'missing' ? (
+                  <Link to="/shop" className="rounded-2xl bg-grape px-4 py-2 text-sm font-black text-white">
+                    К магазину
+                  </Link>
+                ) : undefined
               }
             />
           </div>
@@ -122,6 +131,8 @@ export default function Collection() {
             <Link
               to="/collection/new"
               className="flex min-h-[210px] flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-grape/40 bg-white/50 p-4 text-center transition active:scale-[0.97]"
+              aria-hidden={filter !== 'pets'}
+              style={filter !== 'pets' ? { display: 'none' } : undefined}
             >
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-grape/10 text-grape">
                 <Plus size={30} />

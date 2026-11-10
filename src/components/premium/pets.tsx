@@ -502,3 +502,55 @@ export function ShadowArt({ size, silhouette, className }: P) {
     </Frame>
   );
 }
+
+/** Сова дяди Ярика — особый почтовый питомец, живёт у Сони с самого начала */
+export function OwlArt({ size, silhouette, className }: P) {
+  return (
+    <Frame size={size} soft="#FFF3E0" silhouette={silhouette} label="Сова дяди Ярика" className={className}>
+      <Ground rx={40} />
+      {/* хвост */}
+      <path d="M86 150 L94 164 L100 150 L106 164 L112 150 L112 138 L86 138 Z" fill="#8A5A3B" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
+      {/* тело */}
+      <ellipse cx="99" cy="112" rx="34" ry="40" fill="#C98A5B" stroke={INK} strokeWidth="3" />
+      <ellipse cx="99" cy="126" rx="20" ry="22" fill="#F3DFC2" stroke={INK} strokeWidth="2.2" />
+      <path d="M90 118 q4 5 8 0 M100 118 q4 5 8 0 M92 130 q5 5 10 0" stroke="#D9B98C" strokeWidth="2.2" fill="none" strokeLinecap="round" />
+      {/* крыло с конвертом */}
+      <path d="M64 104 Q50 116 58 132 Q68 128 72 118 Z" fill="#A9744C" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
+      <g transform="rotate(-12 66 108)">
+        <rect x="52" y="98" width="26" height="18" rx="3" fill="#fff" stroke={INK} strokeWidth="2" />
+        <path d="M53 100 L65 110 L77 100" stroke={INK} strokeWidth="1.8" fill="none" />
+        <path d="M74 94 l1.6 3.4 3.4 1.6 -3.4 1.6 -1.6 3.4 -1.6 -3.4 -3.4 -1.6 3.4 -1.6z" fill="#FFD45C" stroke={INK} strokeWidth="1" />
+      </g>
+      {/* ушки-перья */}
+      <path d="M76 74 L70 58 L86 66 Z" fill="#A9744C" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M122 74 L128 58 L112 66 Z" fill="#A9744C" stroke={INK} strokeWidth="2.4" strokeLinejoin="round" />
+      {/* голова */}
+      <circle cx="99" cy="82" r="28" fill="#C98A5B" stroke={INK} strokeWidth="3" />
+      {/* почтовая фуражка */}
+      <g>
+        <rect x="82" y="52" width="34" height="12" rx="4" fill="#5EC8ED" stroke={INK} strokeWidth="2.2" />
+        <rect x="76" y="60" width="46" height="6" rx="3" fill="#5EC8ED" stroke={INK} strokeWidth="2.2" />
+        <path d="M92 64 l2 4 4 2 -4 2 -2 4 -2 -4 -4 -2 4 -2z" fill="#FFD45C" stroke={INK} strokeWidth="1" />
+      </g>
+      {/* глаза */}
+      <g className="pet-eyes">
+        <circle cx="88" cy="84" r="11" fill="#fff" stroke={INK} strokeWidth="2.4" />
+        <circle cx="110" cy="84" r="11" fill="#fff" stroke={INK} strokeWidth="2.4" />
+        <circle cx="89" cy="85" r="5.4" fill="#5B3FBF" stroke={INK} strokeWidth="1.6" />
+        <circle cx="109" cy="85" r="5.4" fill="#5B3FBF" stroke={INK} strokeWidth="1.6" />
+        <circle cx="89" cy="86" r="2.6" fill={INK} />
+        <circle cx="109" cy="86" r="2.6" fill={INK} />
+        <circle cx="87" cy="82.5" r="1.6" fill="#fff" />
+        <circle cx="107" cy="82.5" r="1.6" fill="#fff" />
+      </g>
+      {/* клюв и румяна */}
+      <path d="M96 94 L99 100 L102 94 Z" fill="#F5A623" stroke={INK} strokeWidth="1.8" strokeLinejoin="round" />
+      <ellipse cx="80" cy="94" rx="5" ry="3.2" fill="#F38BBF" opacity="0.5" />
+      <ellipse cx="118" cy="94" rx="5" ry="3.2" fill="#F38BBF" opacity="0.5" />
+      {/* лапки */}
+      <path d="M88 150 v6 M94 150 v6 M104 150 v6 M110 150 v6" stroke="#F5A623" strokeWidth="3" strokeLinecap="round" />
+      <Spark x={140} y={60} s={5} c="#5EC8ED" />
+      <Spark x={56} y={64} s={4.4} c="#FFD45C" delay={0.8} />
+    </Frame>
+  );
+}

@@ -62,6 +62,8 @@ export interface Pet {
   hueShift?: number;
   /** Украшение вариации: bow | star | flower | crown | berry */
   accessory?: string;
+  /** Особый питомец (нельзя отпустить на волю) */
+  special?: boolean;
   createdAt: string;
 }
 
@@ -108,6 +110,8 @@ export interface Quest {
   rewardXp: number;
   enabled: boolean;
   isDemo: boolean;
+  /** Одноразовое задание: после подтверждения исчезает из списка */
+  oneTime?: boolean;
   /** Дата, когда квест последний раз был выполнен (для сброса ежедневных) */
   lastCompletedOn: string | null;
   createdAt: string;
@@ -217,6 +221,9 @@ export interface AppMeta {
   seededAt: string;
   parentPin: string;
   schemaVersion: number;
+  /** Telegram-бот для писем дяде Ярику: токен и chat id (заполняет мама) */
+  telegramBotToken?: string;
+  telegramChatId?: string;
 }
 
 // ─── DTO для импорта каталога ──────────────────────────────────────────────
