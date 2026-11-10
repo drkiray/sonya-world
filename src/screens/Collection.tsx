@@ -172,7 +172,6 @@ function PetCard({ pet }: { pet: Pet }) {
             <Chip className={cn('border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
               {RARITY_LABELS[pet.rarity]}
             </Chip>
-            {pet.variantOf && <Chip className="bg-sky/15 px-1.5 text-[10px] text-sky">Вариация</Chip>}
           </div>
           <p
             className={cn(
