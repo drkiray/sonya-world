@@ -179,6 +179,18 @@ export async function initStore(): Promise<void> {
     loaded = { ...loaded, pets: loaded.pets.map((p) => byId.get(p.id) ?? p) };
   }
 
+  // Миграция магазина: заменить старые награды на новый набор
+  if (loaded.rewards.some((r) => r.id.startsWith('reward-demo-'))) {
+    const nowIso = new Date().toISOString();
+    const fresh = buildDemoRewards(nowIso);
+    const keep = loaded.rewards.filter((r) => !r.id.startsWith('reward-demo-'));
+    await idb.batch(
+      fresh.map((value) => ({ store: 'rewards' as const, value })),
+      loaded.rewards.filter((r) => r.id.startsWith('reward-demo-')).map((r) => ({ store: 'rewards' as const, id: r.id })),
+    );
+    loaded = { ...loaded, rewards: [...keep, ...fresh] };
+  }
+
   // Подхват заданий Сони на уже установленных устройствах
   const now = new Date().toISOString();
   const missing = buildSonyaQuests(now).filter((q) => !loaded.quests.some((x) => x.id === q.id));
@@ -326,13 +338,27 @@ export const EGG_PRICE: Record<Rarity, number> = {
   'Космическая': 120,
   'Секретная': 200,
   'Вечная': 320,
-  'Божественная': 500,
+  'Божественная': 300,
 };
 
 /** Фактическое время роста яйца: в режиме разработчика — 1 секунда */
 export function eggGrowMs(rarity: Rarity): number {
   return state.profile.devMode ? 1000 : EGG_GROW_MS[rarity];
 }
+
+/** Опыт за вылупившееся яйцо по редкости */
+export const EGG_XP: Record<Rarity, number> = {
+  'Обычная': 5,
+  'Необычная': 10,
+  'Редкая': 20,
+  'Эпическая': 40,
+  'Легендарная': 60,
+  'Мифическая': 90,
+  'Космическая': 130,
+  'Секретная': 180,
+  'Вечная': 240,
+  'Божественная': 320,
+};
 
 export type PetPhase = 'unknown' | 'egg' | 'growing' | 'owned';
 
@@ -440,8 +466,9 @@ export async function evaluateHatching(): Promise<Pet[]> {
   });
   if (due.length === 0) return [];
 
-  const writes: Array<{ store: 'collection'; value: { id: string } }> = [];
+  const writes: Array<{ store: 'collection' | 'profile'; value: { id: string } }> = [];
   const collection = { ...state.collection };
+  const gainedXp = due.reduce((sum, pet) => sum + EGG_XP[pet.rarity], 0);
   for (const pet of due) {
     const prev = collection[pet.id]!;
     const updated: CollectionEntry & { id: string } = {
@@ -454,8 +481,10 @@ export async function evaluateHatching(): Promise<Pet[]> {
     writes.push({ store: 'collection', value: updated });
     collection[pet.id] = updated;
   }
+  const profile: Profile = { ...state.profile, xp: state.profile.xp + gainedXp, level: levelForXp(state.profile.xp + gainedXp) };
+  writes.push({ store: 'profile', value: { id: PROFILE_ID, ...profile } });
   await idb.batch(writes);
-  setState({ collection });
+  setState({ collection, profile });
   playSound('achievement');
   await evaluateAchievements();
   return due;
@@ -790,12 +819,34 @@ export async function evaluateAchievements(): Promise<string[]> {
 
 export { ACHIEVEMENTS };
 
+/** Опыт для перехода с уровня n на n+1: 100, 125, 150, 175, ... */
+export function xpNeedForLevel(level: number): number {
+  return 100 + (level - 1) * 25;
+}
+
+/** Уровень по суммарному опыту (растёт бесконечно) */
 export function levelForXp(xp: number): number {
-  return Math.floor(xp / 100) + 1;
+  let level = 1;
+  let rest = xp;
+  let need = xpNeedForLevel(1);
+  while (rest >= need) {
+    rest -= need;
+    level += 1;
+    need = xpNeedForLevel(level);
+  }
+  return level;
 }
 
 export function xpProgress(profile: Profile): { intoLevel: number; needed: number } {
-  return { intoLevel: profile.xp % 100, needed: 100 };
+  let level = 1;
+  let rest = profile.xp;
+  let need = xpNeedForLevel(1);
+  while (rest >= need) {
+    rest -= need;
+    level += 1;
+    need = xpNeedForLevel(level);
+  }
+  return { intoLevel: rest, needed: need };
 }
 
 export type { TransactionActor };

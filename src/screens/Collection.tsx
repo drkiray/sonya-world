@@ -61,9 +61,7 @@ export default function Collection() {
     });
   }, [list, state.collection, filter, query]);
 
-  const bases = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf);
   const ownedTotal = state.pets.filter((p) => petPhase(p, state.collection[p.id]) === 'owned').length;
-  const pctBases = bases.length ? Math.round((ownedTotal / bases.length) * 100) : 0;
 
   return (
     <div className="flex-1 overflow-y-auto bg-mist pb-4">
@@ -82,19 +80,11 @@ export default function Collection() {
           </Link>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-          <div className="rounded-2xl bg-white/10 p-2.5">
-            <p className="text-xl font-black text-sky">{state.pets.length}</p>
-            <p className="text-[10px] font-bold uppercase text-white/60">всего</p>
-          </div>
-          <div className="rounded-2xl bg-white/10 p-2.5">
-            <p className="text-xl font-black text-sun">{ownedTotal}</p>
-            <p className="text-[10px] font-bold uppercase text-white/60">найдено</p>
-          </div>
-          <div className="rounded-2xl bg-white/10 p-2.5">
-            <p className="text-xl font-black text-rosa">{pctBases}%</p>
-            <p className="text-[10px] font-bold uppercase text-white/60">питомник</p>
-          </div>
+        <div className="mt-4 rounded-2xl bg-white/10 p-3 text-center backdrop-blur">
+          <p className="text-2xl font-black text-sun">{ownedTotal}</p>
+          <p className="text-[11px] font-bold uppercase tracking-wide text-white/60">
+            {ownedTotal === 1 ? 'питомец' : ownedTotal >= 2 && ownedTotal <= 4 ? 'питомца' : 'питомцев'} у Сони
+          </p>
         </div>
 
         <div className="relative mt-3">

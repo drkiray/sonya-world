@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, PawPrint, ScrollText, Sparkles } from 'lucide-react';
 import { useAppState } from '../state/AppContext';
 import { ChildAvatar, EggArt, IslandHero, PetImage } from '../components/art';
 import { CoinChip } from '../components/StatusChips';
-import { Button, Card, Chip, ProgressBar, SectionTitle } from '../components/ui';
-import { xpProgress } from '../services/store';
+import { Button, Card, Chip, Modal, ProgressBar, SectionTitle } from '../components/ui';
+import { EGG_XP, xpProgress } from '../services/store';
 
 export default function Home() {
   const state = useAppState();
+  const [showLevelHint, setShowLevelHint] = useState(false);
   const { profile, pets, collection, quests, submissions, achievements } = state;
 
   const catalogPets = pets.filter((p) => p.source === 'catalog');
@@ -43,12 +45,12 @@ export default function Home() {
 
         {/* Уровень и баланс */}
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-white/10 p-3 backdrop-blur">
+          <button onClick={() => setShowLevelHint(true)} className="rounded-2xl bg-white/10 p-3 text-left backdrop-blur active:bg-white/20">
             <p className="text-[11px] font-bold uppercase tracking-wide text-white/60">Уровень коллекционера</p>
             <p className="text-2xl font-black text-sun">{profile.level}</p>
             <ProgressBar value={xp.intoLevel} max={xp.needed} className="mt-1.5 h-2 bg-white/15" gradient={false} />
-            <p className="mt-1 text-[11px] font-bold text-white/60">{xp.intoLevel}/{xp.needed} опыта</p>
-          </div>
+            <p className="mt-1 text-[11px] font-bold text-white/60">{xp.intoLevel}/{xp.needed} опыта · нажми, чтобы узнать больше</p>
+          </button>
           <div className="flex items-center gap-3 rounded-2xl bg-white/10 p-3 backdrop-blur">
             {featuredPet &&
               (owned.length > 0 ? (
@@ -60,11 +62,8 @@ export default function Home() {
               ))}
             <div>
               <p className="text-[11px] font-bold uppercase tracking-wide text-white/60">Питомцы</p>
-              <p className="text-2xl font-black text-white">
-                {owned.length}
-                <span className="text-sm font-bold text-white/50"> / {pets.length}</span>
-              </p>
-              <Chip className="mt-1 bg-sun/20 text-sun">собрано {progressPct}%</Chip>
+              <p className="text-2xl font-black text-white">{owned.length}</p>
+              <Chip className="mt-1 bg-sun/20 text-sun">у Сони</Chip>
             </div>
           </div>
         </div>
@@ -82,15 +81,11 @@ export default function Home() {
           Прогресс питомника
         </SectionTitle>
         <Card className="p-4">
-          <div className="flex items-center justify-between text-sm font-bold">
-            <span className="text-ink/60">Питомник Сони</span>
-            <span className="text-grape">{ownedCatalog.length} из {catalogPets.length}</span>
-          </div>
-          <ProgressBar value={ownedCatalog.length} max={catalogPets.length} className="mt-2" />
-          <p className="mt-2 text-xs font-semibold text-ink/50">
-            {progressPct < 25 && 'Впереди ещё много удивительных питомцев!'}
-            {progressPct >= 25 && progressPct < 60 && 'Отличный темп, альбом растёт!'}
-            {progressPct >= 60 && 'Почти все питомцы найдены — ты звезда!'}
+          <p className="text-sm font-bold text-ink/70">
+            У Сони уже <span className="font-black text-grape">{owned.length} {petWord(owned.length)}</span>!
+          </p>
+          <p className="mt-1 text-xs font-semibold text-ink/50">
+            Купи яйцо в магазине, вырасти его — и питомцев станет больше. А ещё можно завести своего!
           </p>
         </Card>
 
@@ -159,8 +154,33 @@ export default function Home() {
           </Button>
         </Link>
       </main>
+
+      <Modal open={showLevelHint} onClose={() => setShowLevelHint(false)} title="Как растёт уровень?">
+        <p className="text-sm font-semibold text-ink/70">
+          Соня получает опыт за каждое вылупившееся яйцо! Чем реже существо, тем больше опыта:
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-1.5 text-xs font-bold">
+          {(['Обычная', 'Необычная', 'Редкая', 'Эпическая', 'Легендарная', 'Мифическая', 'Космическая', 'Секретная', 'Вечная', 'Божественная'] as const).map((r) => (
+            <div key={r} className="flex items-center justify-between rounded-xl bg-mist px-2.5 py-1.5">
+              <span className="text-ink/60">{r}</span>
+              <span className="text-grape">+{EGG_XP[r]}</span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-xs font-semibold text-ink/50">
+          Ещё опыт дают выполненные задания. Уровни растут бесконечно — каждый следующий требует чуть больше опыта!
+        </p>
+      </Modal>
     </div>
   );
+}
+
+function petWord(n: number): string {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  if (mod10 === 1 && mod100 !== 11) return 'питомец';
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'питомца';
+  return 'питомцев';
 }
 
 function achievementsLabel(id: string): string {

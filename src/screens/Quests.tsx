@@ -3,17 +3,10 @@ import { Camera, CheckCheck, Clock, Send, X } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
 import { submitQuest } from '../services/store';
 import { QuestArt } from '../components/art';
-import { Button, Card, Chip, EmptyState, Modal, Segmented } from '../components/ui';
-import { QUEST_CATEGORY_LABELS, type Quest, type QuestCategory } from '../types';
+import { Button, Card, Chip, EmptyState, Modal } from '../components/ui';
+import { QUEST_CATEGORY_LABELS, type Quest } from '../types';
 import { cn } from '../lib/cn';
 import { todayKey } from '../services/db';
-
-type CatFilter = 'all' | QuestCategory;
-
-const CATEGORIES: Array<{ value: CatFilter; label: string }> = [
-  { value: 'all', label: 'Все' },
-  ...(Object.entries(QUEST_CATEGORY_LABELS) as Array<[QuestCategory, string]>).map(([value, label]) => ({ value, label })),
-];
 
 const DIFFICULTY_LABELS: Record<Quest['difficulty'], string> = {
   easy: 'Простое',
@@ -42,16 +35,12 @@ function readPhoto(file: File): Promise<string> {
 
 export default function Quests() {
   const state = useAppState();
-  const [cat, setCat] = useState<CatFilter>('all');
+
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null);
 
   const quests = useMemo(
-    () =>
-      state.quests
-        .filter((q) => q.enabled)
-        .filter((q) => cat === 'all' || q.category === cat)
-        .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-    [state.quests, cat],
+    () => state.quests.filter((q) => q.enabled).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+    [state.quests],
   );
 
   const doneToday = quests.filter((q) => q.lastCompletedOn === todayKey()).length;
@@ -77,8 +66,6 @@ export default function Quests() {
       </header>
 
       <main className="px-4">
-        <Segmented className="mt-4" options={CATEGORIES} value={cat} onChange={setCat} />
-
         {quests.length === 0 ? (
           <div className="mt-6">
             <EmptyState title="Здесь пока пусто" text="Мама скоро добавит новые задания!" />

@@ -102,7 +102,7 @@ function newReward(): Reward {
     id: uid(),
     title: '',
     description: '',
-    category: 'gift',
+    category: 'gifts',
     cost: 10,
     imageSeed: Math.floor(Math.random() * 1000),
     imageUrl: null,

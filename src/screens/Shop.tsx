@@ -8,11 +8,10 @@ import { Button, Card, Chip, EmptyState, Modal, ProgressBar, Segmented } from '.
 import { REWARD_CATEGORY_LABELS, RARITIES, type Rarity, type Reward, type RewardCategory } from '../types';
 import { cn } from '../lib/cn';
 
-type CatFilter = 'all' | RewardCategory | 'eggs';
+type CatFilter = 'eggs' | RewardCategory;
 
 const CATEGORIES: Array<{ value: CatFilter; label: string }> = [
   { value: 'eggs', label: 'Яйца' },
-  { value: 'all', label: 'Все' },
   ...(Object.entries(REWARD_CATEGORY_LABELS) as Array<[RewardCategory, string]>).map(([value, label]) => ({ value, label })),
 ];
 
@@ -22,7 +21,7 @@ export default function Shop() {
   const [selected, setSelected] = useState<Reward | null>(null);
 
   const rewards = useMemo(
-    () => state.rewards.filter((r) => r.enabled && (cat === 'all' || r.category === cat)),
+    () => state.rewards.filter((r) => r.enabled && cat !== 'eggs' && r.category === cat),
     [state.rewards, cat],
   );
 

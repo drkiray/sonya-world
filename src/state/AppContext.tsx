@@ -13,6 +13,7 @@ import { Star } from 'lucide-react';
 import { fireConfetti } from '../components/Confetti';
 import {
   ACHIEVEMENTS,
+  EGG_XP,
   evaluateAchievements,
   evaluateHatching,
   getState,
@@ -79,7 +80,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (alive && hatched.length > 0) {
         fireConfetti();
         for (const pet of hatched) {
-          toast(`Яйцо вылупилось! Это ${pet.name}!`, 'success');
+          toast(`Яйцо вылупилось! Это ${pet.name}! +${EGG_XP[pet.rarity]} опыта`, 'success');
         }
       }
     };

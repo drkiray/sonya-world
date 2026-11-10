@@ -16,7 +16,7 @@ import {
   Trophy,
 } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
-import { ACHIEVEMENTS, updateProfile } from '../services/store';
+import { ACHIEVEMENTS, updateProfile, xpProgress } from '../services/store';
 import { AvatarArt, ChildAvatar } from '../components/art';
 import { CoinChip } from '../components/StatusChips';
 import { Button, Card, Chip, Modal, ProgressBar } from '../components/ui';
@@ -88,8 +88,10 @@ export default function Profile() {
           <div className="flex-1">
             <p className="text-2xl font-black">{profile.childName}</p>
             <p className="text-sm font-bold text-white/60">Коллекционер {profile.level} уровня</p>
-            <ProgressBar value={profile.xp % 100} max={100} className="mt-2 h-2 bg-white/15" gradient={false} />
-            <p className="mt-1 text-[11px] font-bold text-white/50">{profile.xp % 100}/100 опыта · серия {profile.streakDays} {dayWord(profile.streakDays)}</p>
+            <ProgressBar value={xpProgress(profile).intoLevel} max={xpProgress(profile).needed} className="mt-2 h-2 bg-white/15" gradient={false} />
+            <p className="mt-1 text-[11px] font-bold text-white/50">
+              {xpProgress(profile).intoLevel}/{xpProgress(profile).needed} опыта до следующего уровня
+            </p>
           </div>
         </div>
       </header>
@@ -153,14 +155,6 @@ function Stat({ icon: Icon, label, value, color }: { icon: typeof Coins; label: 
       <p className="text-[10px] font-bold uppercase text-ink/40">{label}</p>
     </Card>
   );
-}
-
-function dayWord(n: number): string {
-  const mod10 = n % 10;
-  const mod100 = n % 100;
-  if (mod10 === 1 && mod100 !== 11) return 'день';
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return 'дня';
-  return 'дней';
 }
 
 /** Выбор аватарки: готовые персонажи или своя фотография */

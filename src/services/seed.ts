@@ -85,10 +85,20 @@ export function buildDemoQuests(now: string): Quest[] {
 
 export function buildDemoRewards(now: string): Reward[] {
   return [
-    { id: 'reward-demo-01', title: '50 Robux', description: 'Пополнение игрового баланса Roblox от мамы (выдаётся мамой вручную).', category: 'robux', cost: 50, imageSeed: 201, imageUrl: null, enabled: true, isDemo: true, createdAt: now },
-    { id: 'reward-demo-02', title: 'Сюрприз-яйцо', description: 'Настоящее шоколадное яйцо с сюрпризом из магазина.', category: 'surprise', cost: 30, imageSeed: 202, imageUrl: null, enabled: true, isDemo: true, createdAt: now },
-    { id: 'reward-demo-03', title: 'Стикерпак с питомцами', description: 'Наклейки с питомцами Мира Сонечки для тетрадок и телефона.', category: 'gift', cost: 15, imageSeed: 203, imageUrl: null, enabled: true, isDemo: true, createdAt: now },
-    { id: 'reward-demo-04', title: 'Кино-вечер с мамой', description: 'Совместный просмотр мультфильма и попкорн в выходной.', category: 'virtual', cost: 40, imageSeed: 204, imageUrl: null, enabled: true, isDemo: true, createdAt: now },
+    { id: 'reward-01', title: 'Мороженое', description: 'Любой вкус на выбор из мороженого.', category: 'treats', cost: 10, imageSeed: 301, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-02', title: 'Киндер-сюрприз', description: 'Шоколадное яйцо с игрушкой внутри.', category: 'treats', cost: 15, imageSeed: 302, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-03', title: 'Мармеладки', description: 'Пакетик мармеладных конфет.', category: 'treats', cost: 10, imageSeed: 303, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-04', title: 'Любая вкусняшка на выбор', description: 'Соня сама выбирает любую сладость.', category: 'treats', cost: 20, imageSeed: 304, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-05', title: 'Поход в кофейню', description: 'Вместе с мамой: какао и десерт.', category: 'treats', cost: 40, imageSeed: 305, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-06', title: 'Поход во «Вкусно и точка»', description: 'Хэппи мил или любимый бургер.', category: 'treats', cost: 35, imageSeed: 306, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-07', title: 'Прогулка в парке с мамой', description: 'Качели, мороженое и хорошая погода.', category: 'celebration', cost: 20, imageSeed: 307, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-08', title: 'Поход в кинотеатр', description: 'Мультфильм на большом экране и попкорн.', category: 'celebration', cost: 40, imageSeed: 308, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-09', title: 'Поход в ресторан', description: 'Семейный ужин в любимом месте.', category: 'celebration', cost: 60, imageSeed: 309, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-10', title: 'Поход в зоопарк', description: 'Настоящие животные и море впечатлений.', category: 'celebration', cost: 50, imageSeed: 310, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-11', title: 'Поход в океанариум', description: 'Рыбы, скаты и туннель под водой.', category: 'celebration', cost: 60, imageSeed: 311, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-12', title: 'Поход в музей', description: 'Интересные экспонаты и открытия.', category: 'celebration', cost: 40, imageSeed: 312, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-13', title: 'Игрушка с Озона', description: 'Любая игрушка на выбор с доставкой.', category: 'gifts', cost: 50, imageSeed: 313, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
+    { id: 'reward-14', title: 'Игрушка с Вайлдберрис', description: 'Игрушка мечты — прямо до двери.', category: 'gifts', cost: 50, imageSeed: 314, imageUrl: null, enabled: true, isDemo: false, createdAt: now },
   ];
 }
 

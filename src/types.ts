@@ -128,13 +128,12 @@ export interface QuestSubmission {
   reviewedAt: string | null;
 }
 
-export type RewardCategory = 'robux' | 'gift' | 'surprise' | 'virtual';
+export type RewardCategory = 'treats' | 'celebration' | 'gifts';
 
 export const REWARD_CATEGORY_LABELS: Record<RewardCategory, string> = {
-  robux: 'Robux',
-  gift: 'Подарки',
-  surprise: 'Сюрпризы',
-  virtual: 'Виртуальные предметы',
+  treats: 'Вкусняшки',
+  celebration: 'Праздник',
+  gifts: 'Подарки',
 };
 
 export interface Reward {
