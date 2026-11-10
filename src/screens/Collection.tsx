@@ -5,7 +5,7 @@ import { useAppState } from '../state/AppContext';
 import { petPhase } from '../services/store';
 import { EggArt, PetImage, RARITY_COLORS, RARITY_LABELS } from '../components/art';
 import { Card, Chip, EmptyState, Segmented } from '../components/ui';
-import type { CollectionStatus, Pet } from '../types';
+import { RARITIES, type CollectionStatus, type Pet } from '../types';
 import { cn } from '../lib/cn';
 
 type Filter = 'eggs' | 'pets' | 'missing' | 'favorite';
@@ -39,12 +39,10 @@ export default function Collection() {
   const [filter, setFilter] = useState<Filter>('pets');
   const [query, setQuery] = useState('');
 
+  // Список всегда отсортирован по редкости; внутри одной редкости — порядок появления
   const list = useMemo(() => {
-    const bases = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf);
-    const rest = state.pets
-      .filter((p) => p.source === 'custom' || p.variantOf)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    return [...bases, ...rest];
+    const rarityIdx = (p: Pet) => RARITIES.indexOf(p.rarity);
+    return [...state.pets].sort((a, b) => rarityIdx(a) - rarityIdx(b));
   }, [state.pets]);
 
   const filtered = useMemo(() => {

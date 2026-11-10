@@ -128,7 +128,7 @@ export default function PetDetail() {
         </div>
 
         <h1 className="mt-3 text-center text-2xl font-black">
-          {phase === 'unknown' ? 'Неизвестное существо' : pet.name}
+          {phase === 'owned' ? pet.name : phase === 'unknown' ? 'Неизвестное существо' : 'Секретное яйцо'}
         </h1>
         <div className="mt-2 flex flex-wrap justify-center gap-1.5">
           <Chip className="border" style={{ background: rc.soft, color: rc.text, borderColor: rc.ring }}>
