@@ -18,9 +18,12 @@ export const ACHIEVEMENTS: AchievementDef[] = [
 const RARE_ORDER = RARITIES;
 
 export function checkAchievements(state: AppState): string[] {
-  const owned = state.pets.filter((p) => state.collection[p.id]?.status === 'owned');
+  // Особые питомцы (Сова дяди Ярика) не считаются: достижения — только за найденных
+  const owned = state.pets.filter((p) => !p.special && state.collection[p.id]?.status === 'owned');
   const ownedCount = owned.length;
-  const eggCount = Object.values(state.collection).filter((e) => e.status === 'egg' || e.status === 'growing').length;
+  const eggCount = Object.values(state.collection).filter(
+    (e) => (e.status === 'egg' || e.status === 'growing') && state.pets.some((p) => p.id === e.petId && !p.special),
+  ).length;
   const approvedSubs = state.submissions.filter((s) => s.status === 'approved').length;
   const hasRare = owned.some((p) => RARE_ORDER.indexOf(p.rarity) >= RARE_ORDER.indexOf('Эпическая'));
 
