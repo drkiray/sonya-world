@@ -39,10 +39,11 @@ export default function Collection() {
   const [filter, setFilter] = useState<Filter>('pets');
   const [query, setQuery] = useState('');
 
-  // Список всегда отсортирован по редкости; внутри одной редкости — порядок появления
+  // Особые питомцы (Сова дяди Ярика) закреплены первыми, дальше — по редкости;
+  // внутри одной редкости порядок появления
   const list = useMemo(() => {
-    const rarityIdx = (p: Pet) => RARITIES.indexOf(p.rarity);
-    return [...state.pets].sort((a, b) => rarityIdx(a) - rarityIdx(b));
+    const sortKey = (p: Pet) => (p.special ? -1 : RARITIES.indexOf(p.rarity));
+    return [...state.pets].sort((a, b) => sortKey(a) - sortKey(b));
   }, [state.pets]);
 
   const filtered = useMemo(() => {
