@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Camera, CheckCheck, Clock, Send, X } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
-import { submitQuest } from '../services/store';
+import { evaluateAchievements, submitQuest } from '../services/store';
 import { QuestArt } from '../components/art';
 import { Button, Card, Chip, EmptyState, Modal } from '../components/ui';
 import { QUEST_CATEGORY_LABELS, type Quest } from '../types';
@@ -42,6 +42,11 @@ export default function Quests() {
     () => state.quests.filter((q) => q.enabled).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [state.quests],
   );
+
+  // Достижения за выполненные задания открываются именно здесь — у Сони на глазах
+  useEffect(() => {
+    void evaluateAchievements();
+  }, []);
 
   const doneToday = quests.filter((q) => q.lastCompletedOn === todayKey()).length;
   const pendingCount = state.submissions.filter((s) => s.status === 'pending').length;
@@ -144,28 +149,15 @@ function questArtSeed(id: string): number {
 
 function SubmitModal({ quest, onClose }: { quest: Quest | null; onClose: () => void }) {
   const { toast } = useUi();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [comment, setComment] = useState('');
-  const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const close = () => {
-    setComment('');
-    setPhoto(null);
-    onClose();
-  };
 
   const send = async () => {
     if (!quest) return;
-    if (!comment.trim() && !photo) {
-      toast('Напиши пару слов или прикрепи фото — маме важно увидеть результат!', 'error');
-      return;
-    }
     setBusy(true);
     try {
-      await submitQuest(quest.id, comment.trim(), photo);
+      await submitQuest(quest.id, '', null);
       toast('Задание отправлено маме на проверку!', 'success');
-      close();
+      onClose();
     } catch (e) {
       toast(e instanceof Error ? e.message : 'Не получилось отправить', 'error');
     } finally {
@@ -174,41 +166,10 @@ function SubmitModal({ quest, onClose }: { quest: Quest | null; onClose: () => v
   };
 
   return (
-    <Modal open={quest !== null} onClose={close} title={quest?.title ?? ''}>
+    <Modal open={quest !== null} onClose={onClose} title={quest?.title ?? ''}>
       <p className="text-sm font-semibold text-ink/60">
-        Покажи, что задание выполнено. Монеты начислятся после проверки мамой.
+        Монеты начислятся после проверки мамой. Она посмотрит и нажмёт «Подтвердить»!
       </p>
-      <textarea
-        value={comment}
-        onChange={(e) => setComment(e.target.value)}
-        rows={3}
-        placeholder="Расскажи, что получилось…"
-        className="mt-3 w-full resize-none rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm font-semibold outline-none focus:border-grape"
-      />
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-2 rounded-2xl border-2 border-dashed border-grape/40 bg-grape/5 px-3 py-2 text-sm font-bold text-grape active:scale-95"
-        >
-          <Camera size={16} /> {photo ? 'Фото прикреплено!' : 'Прикрепить фото'}
-        </button>
-        {photo && (
-          <button onClick={() => setPhoto(null)} className="rounded-full bg-ink/5 p-1.5 text-ink/50" aria-label="Убрать фото">
-            <X size={14} />
-          </button>
-        )}
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={async (e) => {
-            const f = e.target.files?.[0];
-            if (f) setPhoto(await readPhoto(f));
-          }}
-        />
-      </div>
-      {photo && <img src={photo} alt="Результат" className="mt-2 max-h-40 rounded-2xl object-cover" />}
       <Button size="lg" className="mt-4 w-full" onClick={send} disabled={busy}>
         <Send size={16} /> {busy ? 'Отправляем…' : 'Отправить маме'}
       </Button>

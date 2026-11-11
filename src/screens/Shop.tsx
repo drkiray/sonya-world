@@ -103,7 +103,7 @@ function EggShop() {
         {available.map((rarity) => {
           const rc = RARITY_COLORS[rarity];
           const price = EGG_PRICE[rarity];
-          const count = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity).length;
+          const seed = RARITIES.indexOf(rarity) * 13 + 5;
           const affordable = state.profile.coins >= price;
           return (
             <Card key={rarity} className="flex h-full flex-col overflow-hidden p-3 text-center">
@@ -111,16 +111,13 @@ function EggShop() {
                 className="flex h-24 w-full shrink-0 items-center justify-center rounded-2xl"
                 style={{ background: `linear-gradient(180deg, ${rc.soft}, #fff)` }}
               >
-                <EggArt rarity={rarity} seed={count * 7} size={76} />
+                <EggArt rarity={rarity} seed={seed} size={76} />
               </div>
-              <div className="mt-2 flex h-16 shrink-0 flex-col items-center">
+              <div className="mt-2 flex h-12 shrink-0 flex-col items-center">
                 <p className="text-xs font-black text-ink">Сюрприз-яйцо</p>
                 <Chip className={cn('mt-1 border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
                   {RARITY_LABELS[rarity]}
                 </Chip>
-                <p className="mt-1 text-[10px] font-bold text-ink/40">
-                  существ: {count} · рост {formatDuration(eggGrowMs(rarity))}
-                </p>
               </div>
               <div className="mt-auto flex h-9 w-full shrink-0 items-center justify-between gap-2 pt-2">
                 <Chip className="shrink-0 bg-night px-2 py-1 text-sun">

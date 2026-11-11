@@ -181,6 +181,20 @@ export async function initStore(): Promise<void> {
     loaded = { ...loaded, pets: loaded.pets.map((p) => byId.get(p.id) ?? p) };
   }
 
+  // Миграция магазина: привести стандартные награды к актуальным (цены/названия)
+  {
+    const defaults = buildDemoRewards(new Date().toISOString());
+    const changed = defaults.filter((d) => {
+      const cur = loaded.rewards.find((r) => r.id === d.id);
+      return !cur || cur.cost !== d.cost || cur.title !== d.title || cur.description !== d.description;
+    });
+    if (changed.length > 0) {
+      const kept = loaded.rewards.filter((r) => !changed.some((d) => d.id === r.id));
+      await idb.batch(changed.map((value) => ({ store: 'rewards' as const, value })));
+      loaded = { ...loaded, rewards: [...kept, ...changed] };
+    }
+  }
+
   // Миграция магазина: заменить старые награды на новый набор
   if (loaded.rewards.some((r) => r.id.startsWith('reward-demo-'))) {
     const nowIso = new Date().toISOString();
@@ -731,7 +745,8 @@ export async function reviewSubmission(submissionId: string, approve: boolean, p
   await idb.batch(writes);
   setState(newState);
   if (approve) playSound('coins');
-  await evaluateAchievements();
+  // Достижения за задания не проверяем здесь — откроются у Сони,
+  // когда она в следующий раз зайдёт в раздел «Задания».
 }
 
 // ─── Награды и заявки ──────────────────────────────────────────────────────
