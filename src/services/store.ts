@@ -214,6 +214,14 @@ export async function initStore(): Promise<void> {
     };
   }
 
+  // Новые существа каталога (Хранительница тайн, Вечный страж) на уже установленных устройствах
+  const newBases = buildDemoPets(new Date().toISOString()).pets.filter((p) => ['demo-13', 'demo-14'].includes(p.id));
+  const missingBases = newBases.filter((p) => !loaded.pets.some((x) => x.id === p.id));
+  if (missingBases.length > 0) {
+    await idb.batch(missingBases.map((value) => ({ store: 'pets' as const, value })));
+    loaded = { ...loaded, pets: [...loaded.pets, ...missingBases] };
+  }
+
   // Одноразовые задания: пометить старые и подхватить новые
   const nowIso = new Date().toISOString();
   const oneTimeWrites: Array<{ store: 'quests'; value: Quest }> = [];
@@ -424,13 +432,8 @@ export function petPhase(pet: Pet, entry?: CollectionEntry): PetPhase {
 /** Покупка сюрприз-яйца по редкости: списание сразу, без подтверждения родителя.
  *  При покупке случайно выбирается существо этой редкости; если оно уже есть
  *  в коллекции — рождается редкая вариация с новым именем и визуалом. */
-/** Счастливые яйца: внутри случайное существо из всего каталога */
-const LUCKY_EGG_RARITIES: Rarity[] = ['Секретная', 'Вечная'];
-
 export async function buyEgg(rarity: Rarity): Promise<Pet> {
-  const pool = LUCKY_EGG_RARITIES.includes(rarity)
-    ? state.pets.filter((p) => p.source === 'catalog' && !p.variantOf)
-    : state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity);
+  const pool = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity);
   if (pool.length === 0) throw new BizError('Существ этой редкости пока нет в игре');
 
   // Пока есть ненайденные существа этой редкости — выпадает всегда новое.

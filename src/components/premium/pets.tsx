@@ -554,3 +554,79 @@ export function OwlArt({ size, silhouette, className }: P) {
     </Frame>
   );
 }
+
+/** demo-13 · Хранительница тайн (Секретная) — существо в капюшоне с ключом */
+export function SecretKeeperArt({ size, silhouette, className }: P) {
+  return (
+    <Frame size={size} soft="#EFEAFB" silhouette={silhouette} label="Хранительница тайн" className={className}>
+      <Ground rx={38} />
+      {/* мантия */}
+      <path
+        d="M62 148 Q56 108 74 88 Q68 64 100 58 Q132 64 126 88 Q144 108 138 148 Q120 158 100 156 Q80 158 62 148Z"
+        fill="#5B4A96"
+        stroke={INK}
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
+      <path d="M74 96 Q68 120 72 144 M126 96 Q132 120 128 144" stroke="#433876" strokeWidth="3" fill="none" strokeLinecap="round" />
+      {/* капюшон и лицо-тень */}
+      <path d="M74 88 Q78 58 100 54 Q122 58 126 88 Q114 76 100 76 Q86 76 74 88Z" fill="#433876" stroke={INK} strokeWidth="2.6" strokeLinejoin="round" />
+      <ellipse cx="100" cy="92" rx="20" ry="15" fill="#2A2148" stroke={INK} strokeWidth="2.2" />
+      {/* светящиеся глаза */}
+      <g className="pet-eyes">
+        <ellipse cx="92" cy="92" rx="4.6" ry="6" fill="#7DF9E0" />
+        <ellipse cx="108" cy="92" rx="4.6" ry="6" fill="#7DF9E0" />
+      </g>
+      {/* золотой ключ на груди */}
+      <g transform="translate(100 122)" stroke="#FFD45C" strokeWidth="2.6" fill="none" strokeLinecap="round">
+        <circle cx="0" cy="-6" r="5" fill="#FFD45C" stroke={INK} strokeWidth="2" />
+        <path d="M0 -1 v12 M0 6 h5 M0 10 h4" />
+      </g>
+      {/* лапки */}
+      <ellipse cx="86" cy="152" rx="9" ry="6" fill="#433876" stroke={INK} strokeWidth="2.2" />
+      <ellipse cx="114" cy="152" rx="9" ry="6" fill="#433876" stroke={INK} strokeWidth="2.2" />
+      <Spark x={56} y={70} s={4.6} c="#B79CFF" />
+      <Spark x={146} y={80} s={4.6} c="#7DF9E0" delay={0.8} />
+      <Spark x={140} y={130} s={4} c="#FFD45C" delay={1.4} />
+    </Frame>
+  );
+}
+
+/** demo-14 · Вечный страж (Вечная) — кристаллический голем со знаком бесконечности */
+export function EternalGuardianArt({ size, silhouette, className }: P) {
+  return (
+    <Frame size={size} soft="#ECFEFF" silhouette={silhouette} label="Вечный страж" className={className}>
+      <Ground rx={42} />
+      <defs>
+        <linearGradient id="et-c" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#E0FBFF" />
+          <stop offset="100%" stopColor="#22D3EE" />
+        </linearGradient>
+      </defs>
+      {/* кристаллы за спиной */}
+      <g stroke={INK} strokeWidth="2.4" strokeLinejoin="round">
+        <path d="M126 116 L142 66 L158 116 Z" fill="url(#et-c)" />
+        <path d="M142 66 L142 116" stroke="#fff" strokeWidth="1.8" opacity="0.7" />
+        <path d="M152 118 L164 88 L176 118 Z" fill="url(#et-c)" />
+      </g>
+      {/* ноги */}
+      <rect x="82" y="130" width="16" height="26" rx="6" fill="#7DD8E8" stroke={INK} strokeWidth="2.4" />
+      <rect x="104" y="130" width="16" height="26" rx="6" fill="#7DD8E8" stroke={INK} strokeWidth="2.4" />
+      {/* тело-кристалл */}
+      <path d="M72 132 L80 92 L100 78 L120 92 L128 132 Q100 142 72 132Z" fill="url(#et-c)" stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+      <path d="M100 78 L100 138 M80 92 L96 104 M120 92 L104 104" stroke="#fff" strokeWidth="2" opacity="0.65" />
+      {/* голова */}
+      <path d="M84 84 L100 62 L116 84 Q100 92 84 84Z" fill="#BAF2FA" stroke={INK} strokeWidth="2.6" strokeLinejoin="round" />
+      {/* знак бесконечности на груди */}
+      <path d="M88 112 q6 -8 12 0 q6 8 12 0" stroke={INK} strokeWidth="2.6" fill="none" strokeLinecap="round" />
+      {/* глаза */}
+      <g className="pet-eyes">
+        <circle cx="93" cy="78" r="3" fill={INK} />
+        <circle cx="107" cy="78" r="3" fill={INK} />
+      </g>
+      <Spark x={58} y={88} s={5} c="#22D3EE" />
+      <Spark x={148} y={58} s={4.4} c="#BAF2FA" delay={0.9} />
+      <Spark x={64} y={140} s={4} c="#7DD3FC" delay={1.5} />
+    </Frame>
+  );
+}

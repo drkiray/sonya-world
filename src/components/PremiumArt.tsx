@@ -6,6 +6,8 @@
 import type { ReactElement } from 'react';
 import {
   OwlArt,
+  SecretKeeperArt,
+  EternalGuardianArt,
   FluffballArt,
   HedgehogArt,
   RockArt,
@@ -167,4 +169,6 @@ export const PREMIUM_PETS: Record<string, (p: PremiumProps) => ReactElement> = {
   'demo-10': UnicornArt,
   'demo-11': RainbowKeeperArt,
   'demo-12': ShadowArt,
+  'demo-13': SecretKeeperArt,
+  'demo-14': EternalGuardianArt,
 };

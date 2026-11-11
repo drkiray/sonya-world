@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Coins, PackageCheck, ShoppingBag } from 'lucide-react';
+import { Clock, Coins, PackageCheck, ShoppingBag } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
 import { buyEgg, eggGrowMs, EGG_PRICE, petPhase, requestReward } from '../services/store';
 import { EggArt, RewardArt, RARITY_COLORS, RARITY_LABELS } from '../components/art';
@@ -103,35 +103,33 @@ function EggShop() {
         {available.map((rarity) => {
           const rc = RARITY_COLORS[rarity];
           const price = EGG_PRICE[rarity];
-          const lucky = rarity === 'Секретная' || rarity === 'Вечная';
-          const count = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && (lucky || p.rarity === rarity)).length;
+          const count = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity).length;
           const affordable = state.profile.coins >= price;
           return (
-            <Card key={rarity} className="flex flex-col items-center overflow-hidden p-3 text-center">
+            <Card key={rarity} className="flex h-full flex-col overflow-hidden p-3 text-center">
               <div
-                className="flex h-24 w-full items-center justify-center rounded-2xl"
+                className="flex h-24 w-full shrink-0 items-center justify-center rounded-2xl"
                 style={{ background: `linear-gradient(180deg, ${rc.soft}, #fff)` }}
               >
                 <EggArt rarity={rarity} seed={count * 7} size={76} />
               </div>
-              <p className="mt-2 text-xs font-black text-ink">Сюрприз-яйцо</p>
-              <Chip className={cn('mt-1 border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
-                {RARITY_LABELS[rarity]}
-              </Chip>
-              <p className="mt-1 text-[10px] font-bold text-ink/40">
-                {lucky ? 'внутри любое существо' : `существ: ${count}`} · рост {formatDuration(eggGrowMs(rarity))}
-              </p>
-              <div className="mt-auto flex w-full items-center justify-between pt-2">
-                <Chip className="bg-night px-2 py-1 text-sun">
+              <div className="mt-2 flex h-16 shrink-0 flex-col items-center">
+                <p className="text-xs font-black text-ink">Сюрприз-яйцо</p>
+                <Chip className={cn('mt-1 border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
+                  {RARITY_LABELS[rarity]}
+                </Chip>
+                <p className="mt-1 text-[10px] font-bold text-ink/40">
+                  существ: {count} · рост {formatDuration(eggGrowMs(rarity))}
+                </p>
+              </div>
+              <div className="mt-auto flex h-9 w-full shrink-0 items-center justify-between gap-2 pt-2">
+                <Chip className="shrink-0 bg-night px-2 py-1 text-sun">
                   <Coins size={12} /> {price}
                 </Chip>
-                <Button size="sm" variant={affordable ? 'sun' : 'secondary'} onClick={() => setSelected(rarity)}>
+                <Button size="sm" variant={affordable ? 'sun' : 'secondary'} onClick={() => setSelected(rarity)} className="h-8">
                   Купить
                 </Button>
               </div>
-              {!affordable && (
-                <p className="mt-1 text-[10px] font-bold text-red-500">Не хватает {price - state.profile.coins} монет</p>
-              )}
             </Card>
           );
         })}
@@ -230,39 +228,40 @@ function RewardCard({ reward, onPick }: { reward: Reward; onPick: () => void }) 
   const requested = state.rewardRequests.some((r) => r.rewardId === reward.id && r.status === 'pending');
 
   return (
-    <Card className="flex flex-col overflow-hidden">
-      <div className="flex justify-center bg-gradient-to-b from-sun/15 to-white pt-3">
+    <Card className="flex h-full flex-col overflow-hidden">
+      {/* картинка — фиксированная высота */}
+      <div className="flex h-[100px] shrink-0 items-center justify-center bg-gradient-to-b from-sun/15 to-white">
         {reward.imageUrl ? (
           <img src={reward.imageUrl} alt={reward.title} className="h-20 w-20 rounded-2xl object-cover" />
         ) : (
-          <RewardArt seed={reward.imageSeed} size={84} />
+          <RewardArt seed={reward.imageSeed} size={80} />
         )}
       </div>
-      <div className="flex flex-1 flex-col p-3">
-        <div className="flex items-start justify-between gap-1">
-          <p className="text-sm font-black leading-tight text-ink">{reward.title}</p>
-        </div>
-        <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold text-ink/50">{reward.description}</p>
-        <div className="mt-auto flex w-full flex-wrap items-center justify-between gap-1.5 pt-2">
-          <Chip className="shrink-0 bg-night px-2 py-1 text-sun">
-            <Coins size={12} /> {reward.cost}
-          </Chip>
+      {/* текст — фиксированная высота, две строки описания */}
+      <div className="flex h-[62px] shrink-0 flex-col px-3 pt-2">
+        <p className="truncate text-[13px] font-black leading-tight text-ink">{reward.title}</p>
+        <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug text-ink/50">{reward.description}</p>
+      </div>
+      {/* нижняя строка всегда одинаковая: цена слева, действие справа */}
+      <div className="mt-auto flex h-12 shrink-0 items-center justify-between gap-2 px-3 pb-3">
+        <Chip className="shrink-0 bg-night px-2 py-1 text-sun">
+          <Coins size={12} /> {reward.cost}
+        </Chip>
+        <div className="flex h-8 min-w-[100px] items-center justify-end">
           {requested ? (
-            <Chip className="bg-sky/15 text-sky">Ждёт маму</Chip>
+            <Chip className="whitespace-nowrap bg-sky/15 text-sky">
+              <Clock size={12} /> Ждёт маму
+            </Chip>
           ) : (
-            <Button size="sm" variant={affordable ? 'primary' : 'secondary'} onClick={onPick}>
+            <Button size="sm" variant={affordable ? 'primary' : 'secondary'} onClick={onPick} className="h-8 whitespace-nowrap">
               Обменять
             </Button>
           )}
         </div>
-        {!affordable && !requested && (
-          <p className="mt-1.5 text-[10px] font-bold text-red-500">Не хватает {reward.cost - state.profile.coins} монет</p>
-        )}
       </div>
     </Card>
   );
 }
-
 function ExchangeModal({ reward, onClose }: { reward: Reward | null; onClose: () => void }) {
   const state = useAppState();
   const { toast } = useUi();
