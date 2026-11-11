@@ -388,7 +388,7 @@ export const EGG_PRICE: Record<Rarity, number> = {
   'Космическая': 120,
   'Секретная': 200,
   'Вечная': 320,
-  'Божественная': 300,
+  'Божественная': 400,
 };
 
 /** Фактическое время роста яйца: в режиме разработчика — 1 секунда */
@@ -424,8 +424,13 @@ export function petPhase(pet: Pet, entry?: CollectionEntry): PetPhase {
 /** Покупка сюрприз-яйца по редкости: списание сразу, без подтверждения родителя.
  *  При покупке случайно выбирается существо этой редкости; если оно уже есть
  *  в коллекции — рождается редкая вариация с новым именем и визуалом. */
+/** Счастливые яйца: внутри случайное существо из всего каталога */
+const LUCKY_EGG_RARITIES: Rarity[] = ['Секретная', 'Вечная'];
+
 export async function buyEgg(rarity: Rarity): Promise<Pet> {
-  const pool = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity);
+  const pool = LUCKY_EGG_RARITIES.includes(rarity)
+    ? state.pets.filter((p) => p.source === 'catalog' && !p.variantOf)
+    : state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity);
   if (pool.length === 0) throw new BizError('Существ этой редкости пока нет в игре');
 
   // Пока есть ненайденные существа этой редкости — выпадает всегда новое.
