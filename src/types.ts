@@ -224,6 +224,8 @@ export interface AppMeta {
   /** Telegram-бот для писем дяде Ярику: токен и chat id (заполняет мама) */
   telegramBotToken?: string;
   telegramChatId?: string;
+  /** Сколько писем дяде Ярику отправила Соня */
+  lettersSent?: number;
 }
 
 // ─── DTO для импорта каталога ──────────────────────────────────────────────

@@ -485,6 +485,7 @@ export async function buyEgg(rarity: Rarity): Promise<Pet> {
     collection: { ...state.collection, [target.id]: entry },
   });
   playSound('coins');
+  await evaluateAchievements();
   return target;
 }
 
@@ -868,6 +869,12 @@ export async function sendLetterToYarik(message: string): Promise<void> {
     body: JSON.stringify({ chat_id: chatId, text: `✉️ Письмо от Сони (Мир Сонечки):\n\n${text}` }),
   });
   if (!res.ok) throw new BizError('Не получилось отправить письмо. Попробуй позже.');
+
+  // счётчик писем для достижений
+  const meta = { ...state.meta, lettersSent: (state.meta.lettersSent ?? 0) + 1 };
+  await persistMeta(meta);
+  setState({ meta });
+  await evaluateAchievements();
 }
 
 export async function verifyPin(pin: string): Promise<boolean> {

@@ -10,9 +10,13 @@ import {
   Gem,
   Grid3X3,
   KeyRound,
+  Mail,
+  MailOpen,
   Medal,
   PawPrint,
+  Rocket,
   Sparkles,
+  Sun,
   Trophy,
 } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
@@ -32,6 +36,10 @@ const ACHIEVEMENT_ICONS: Record<string, { icon: typeof Egg; bg: string }> = {
   medal: { icon: Medal, bg: 'from-sun to-grape' },
   trophy: { icon: Trophy, bg: 'from-[#FF9A3D] to-rosa' },
   flame: { icon: Flame, bg: 'from-red-400 to-sun' },
+  rocket: { icon: Rocket, bg: 'from-[#4F46E5] to-sky' },
+  sun: { icon: Sun, bg: 'from-sun to-[#FF9A3D]' },
+  mail: { icon: Mail, bg: 'from-sky to-grape' },
+  mailopen: { icon: MailOpen, bg: 'from-grape to-rosa' },
 };
 
 const AVATAR_PRESETS = [11, 22, 33, 44, 55, 66, 77, 88];
