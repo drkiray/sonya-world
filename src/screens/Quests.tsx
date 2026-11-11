@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Camera, CheckCheck, Clock, Send, X } from 'lucide-react';
+import { CheckCheck, Clock, Send } from 'lucide-react';
 import { useAppState, useUi } from '../state/AppContext';
 import { evaluateAchievements, submitQuest } from '../services/store';
 import { QuestArt } from '../components/art';
@@ -14,24 +14,6 @@ const DIFFICULTY_LABELS: Record<Quest['difficulty'], string> = {
   hard: 'Сложное',
   special: 'Особенное',
 };
-
-function readPhoto(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const scale = Math.min(1, 640 / Math.max(img.width, img.height));
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(img.width * scale);
-      canvas.height = Math.round(img.height * scale);
-      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
-      URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL('image/jpeg', 0.8));
-    };
-    img.onerror = reject;
-    img.src = url;
-  });
-}
 
 export default function Quests() {
   const state = useAppState();
