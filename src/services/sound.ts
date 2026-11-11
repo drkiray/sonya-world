@@ -1,5 +1,6 @@
-// Простые синтезированные звуки. Включаются настройкой профиля (по умолчанию ВКЛ);
-// отключить можно в «Настройках для мамы».
+// Волшебные синтезированные звуки. Включаются настройкой профиля (по умолчанию ВКЛ);
+// отключить можно в «Настройках для мамы». Каждое действие имеет свой узнаваемый звук:
+// пентатонические арпеджио, колокольчики и мерцающие обертоны.
 
 let enabled = true;
 let ctx: AudioContext | null = null;
@@ -20,39 +21,105 @@ function audioCtx(): AudioContext | null {
   return ctx;
 }
 
-function beep(freqs: number[], duration = 0.12, type: OscillatorType = 'sine') {
+interface Note {
+  f: number; // частота, Гц
+  at: number; // смещение от начала, сек
+  d: number; // длительность, сек
+  type?: OscillatorType;
+  g?: number; // громкость
+  slide?: number; // если задано — частота плавно уходит в slide к концу ноты
+}
+
+function play(notes: Note[]) {
   if (!enabled) return;
   const ac = audioCtx();
   if (!ac) return;
-  freqs.forEach((f, i) => {
+  const t0 = ac.currentTime;
+  for (const n of notes) {
     const osc = ac.createOscillator();
     const gain = ac.createGain();
-    osc.type = type;
-    osc.frequency.value = f;
-    gain.gain.setValueAtTime(0.0001, ac.currentTime + i * duration);
-    gain.gain.exponentialRampToValueAtTime(0.12, ac.currentTime + i * duration + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + (i + 1) * duration);
+    osc.type = n.type ?? 'sine';
+    const start = t0 + n.at;
+    osc.frequency.setValueAtTime(n.f, start);
+    if (n.slide) osc.frequency.exponentialRampToValueAtTime(n.slide, start + n.d);
+    const vol = n.g ?? 0.12;
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(vol, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + n.d);
     osc.connect(gain).connect(ac.destination);
-    osc.start(ac.currentTime + i * duration);
-    osc.stop(ac.currentTime + (i + 1) * duration + 0.05);
-  });
+    osc.start(start);
+    osc.stop(start + n.d + 0.05);
+  }
 }
 
-export type SoundName = 'coins' | 'achievement' | 'tap' | 'success';
+const rnd = (arr: number[]) => arr[Math.floor(Math.random() * arr.length)];
+
+export type SoundName =
+  | 'tap' // обычное нажатие кнопки
+  | 'coins' // покупка/начисление монет
+  | 'achievement' // открытие значка
+  | 'success' // отправка, сохранение
+  | 'hatch' // вылупление яйца
+  | 'levelup' // новый уровень
+  | 'error'; // ошибка
 
 export function playSound(name: SoundName) {
   switch (name) {
+    case 'tap':
+      // лёгкий колокольчик, слегка разный тон, чтобы не приедалось
+      play([{ f: rnd([740, 830, 932, 1046]), at: 0, d: 0.12, type: 'triangle', g: 0.08 }]);
+      break;
     case 'coins':
-      beep([880, 1320], 0.09, 'triangle');
+      // пентатоническое мерцание: монетка звенит вверх
+      play([
+        { f: 1568, at: 0, d: 0.1, type: 'sine', g: 0.1 },
+        { f: 2093, at: 0.07, d: 0.14, type: 'sine', g: 0.09 },
+        { f: 2637, at: 0.14, d: 0.2, type: 'sine', g: 0.07 },
+      ]);
       break;
     case 'achievement':
-      beep([523, 659, 784, 1047], 0.11);
+      // фанфары колокольчиков: до–ми–соль–до
+      play([
+        { f: 523, at: 0, d: 0.14, type: 'triangle', g: 0.1 },
+        { f: 659, at: 0.11, d: 0.14, type: 'triangle', g: 0.1 },
+        { f: 784, at: 0.22, d: 0.16, type: 'triangle', g: 0.11 },
+        { f: 1046, at: 0.33, d: 0.42, type: 'sine', g: 0.12 },
+        { f: 2093, at: 0.36, d: 0.4, type: 'sine', g: 0.04 },
+      ]);
       break;
     case 'success':
-      beep([659, 880], 0.1);
+      // двойной волшебный перезвон
+      play([
+        { f: 987, at: 0, d: 0.12, type: 'sine', g: 0.1 },
+        { f: 1318, at: 0.09, d: 0.22, type: 'sine', g: 0.1 },
+      ]);
       break;
-    case 'tap':
-      beep([540], 0.05, 'triangle');
+    case 'hatch':
+      // скольжение вверх + сияющий финал — яйцо раскрывается
+      play([
+        { f: 392, at: 0, d: 0.3, type: 'sine', slide: 784, g: 0.09 },
+        { f: 1046, at: 0.28, d: 0.16, type: 'triangle', g: 0.1 },
+        { f: 1568, at: 0.4, d: 0.5, type: 'sine', g: 0.12 },
+        { f: 2093, at: 0.44, d: 0.45, type: 'sine', g: 0.05 },
+      ]);
+      break;
+    case 'levelup':
+      // торжественное арпеджио с обертонами
+      play([
+        { f: 523, at: 0, d: 0.13, type: 'triangle', g: 0.1 },
+        { f: 659, at: 0.1, d: 0.13, type: 'triangle', g: 0.1 },
+        { f: 784, at: 0.2, d: 0.13, type: 'triangle', g: 0.11 },
+        { f: 1046, at: 0.3, d: 0.13, type: 'triangle', g: 0.11 },
+        { f: 1318, at: 0.4, d: 0.6, type: 'sine', g: 0.13 },
+        { f: 2637, at: 0.44, d: 0.55, type: 'sine', g: 0.04 },
+      ]);
+      break;
+    case 'error':
+      // мягкое предупреждение, не пугающее
+      play([
+        { f: 311, at: 0, d: 0.12, type: 'triangle', g: 0.09 },
+        { f: 233, at: 0.12, d: 0.2, type: 'triangle', g: 0.09 },
+      ]);
       break;
   }
 }

@@ -242,8 +242,8 @@ function RewardCard({ reward, onPick }: { reward: Reward; onPick: () => void }) 
           <p className="text-sm font-black leading-tight text-ink">{reward.title}</p>
         </div>
         <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold text-ink/50">{reward.description}</p>
-        <div className="mt-auto flex items-center justify-between pt-2">
-          <Chip className="bg-night px-2 py-1 text-sun">
+        <div className="mt-auto flex w-full flex-wrap items-center justify-between gap-1.5 pt-2">
+          <Chip className="shrink-0 bg-night px-2 py-1 text-sun">
             <Coins size={12} /> {reward.cost}
           </Chip>
           {requested ? (

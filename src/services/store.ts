@@ -264,7 +264,7 @@ async function seedDemoData(): Promise<void> {
     })),
     ...wantedIds.map((id) => ({
       store: 'collection' as const,
-      value: { id, petId: id, status: 'not_found' as CollectionStatus, favorite: id === 'demo-10', updatedAt: now },
+      value: { id, petId: id, status: 'not_found' as CollectionStatus, favorite: false, updatedAt: now },
     })),
     { store: 'pets' as const, value: OWL_PET },
     {
@@ -536,7 +536,7 @@ export async function evaluateHatching(): Promise<Pet[]> {
   writes.push({ store: 'profile', value: { id: PROFILE_ID, ...profile } });
   await idb.batch(writes);
   setState({ collection, profile });
-  playSound('achievement');
+  playSound('hatch');
   await evaluateAchievements();
   return due;
 }
@@ -874,6 +874,7 @@ export async function sendLetterToYarik(message: string): Promise<void> {
   const meta = { ...state.meta, lettersSent: (state.meta.lettersSent ?? 0) + 1 };
   await persistMeta(meta);
   setState({ meta });
+  playSound('success');
   await evaluateAchievements();
 }
 

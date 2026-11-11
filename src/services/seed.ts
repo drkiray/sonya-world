@@ -147,7 +147,7 @@ export function buildInitialProfile(): Profile {
     avatarSeed: 42,
     level: 1,
     xp: 0,
-    coins: 100,
+    coins: 10,
     createdAt: new Date().toISOString(),
     streakDays: 1,
     lastLoginDay: todayKey(),

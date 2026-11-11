@@ -20,7 +20,7 @@ import {
   subscribe,
   type AppState,
 } from '../services/store';
-import { setSoundEnabled, installClickSound } from '../services/sound';
+import { playSound, setSoundEnabled, installClickSound } from '../services/sound';
 import type { AchievementDef } from '../types';
 
 // ─── Глобальное состояние + тосты + очередь достижений ─────────────────────
@@ -59,6 +59,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const toast = useCallback((text: string, kind: Toast['kind'] = 'info') => {
     const id = toastSeq++;
     setToasts((t) => [...t, { id, kind, text }]);
+    if (kind === 'error') playSound('error');
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 3500);
   }, []);
 
@@ -119,6 +120,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (state.profile.level > prevLevel.current) {
       setLevelUp(state.profile.level);
       fireConfetti(2000);
+      playSound('levelup');
     }
     prevLevel.current = state.profile.level;
   }, [state.profile.level]);
