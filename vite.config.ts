@@ -27,6 +27,10 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // новая версия service worker активируется сразу и берёт контроль над вкладками —
+        // меньше шансов поймать устаревший кеш с чанками старой сборки
+        clientsClaim: true,
+        skipWaiting: true,
         globPatterns: ['**/*.{js,css,html,svg,woff2}'],
         runtimeCaching: [
           {
