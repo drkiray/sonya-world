@@ -108,22 +108,29 @@ function EggShop() {
           return (
             <Card key={rarity} className="flex h-full flex-col overflow-hidden p-3 text-center">
               <div
-                className="flex h-24 w-full shrink-0 items-center justify-center rounded-2xl"
+                className="flex h-[92px] w-full shrink-0 items-center justify-center rounded-2xl"
                 style={{ background: `linear-gradient(180deg, ${rc.soft}, #fff)` }}
               >
                 <EggArt rarity={rarity} seed={seed} size={76} />
               </div>
-              <div className="mt-2 flex h-12 shrink-0 flex-col items-center">
+              <div className="mt-1.5 flex h-7 shrink-0 items-center justify-center">
+                <Chip className="bg-night px-2.5 py-1 text-[13px] text-sun">
+                  <Coins size={12} /> {price}
+                </Chip>
+              </div>
+              <div className="mt-1 flex h-12 shrink-0 flex-col items-center">
                 <p className="text-xs font-black text-ink">Сюрприз-яйцо</p>
                 <Chip className={cn('mt-1 border', rc.soft, rc.text)} style={{ borderColor: rc.ring }}>
                   {RARITY_LABELS[rarity]}
                 </Chip>
               </div>
-              <div className="mt-auto flex h-9 w-full shrink-0 items-center justify-between gap-2 pt-2">
-                <Chip className="shrink-0 bg-night px-2 py-1 text-sun">
-                  <Coins size={12} /> {price}
-                </Chip>
-                <Button size="sm" variant={affordable ? 'sun' : 'secondary'} onClick={() => setSelected(rarity)} className="h-8">
+              <div className="mt-auto flex h-11 shrink-0 items-center justify-center pt-2">
+                <Button
+                  size="sm"
+                  variant={affordable ? 'sun' : 'secondary'}
+                  onClick={() => setSelected(rarity)}
+                  className="h-8 w-full"
+                >
                   Купить
                 </Button>
               </div>
@@ -225,36 +232,42 @@ function RewardCard({ reward, onPick }: { reward: Reward; onPick: () => void }) 
   const requested = state.rewardRequests.some((r) => r.rewardId === reward.id && r.status === 'pending');
 
   return (
-    <Card className="flex h-full flex-col overflow-hidden">
+    <Card className="flex h-full flex-col overflow-hidden text-center">
       {/* картинка — фиксированная высота */}
-      <div className="flex h-[100px] shrink-0 items-center justify-center bg-gradient-to-b from-sun/15 to-white">
+      <div className="flex h-[92px] shrink-0 items-center justify-center bg-gradient-to-b from-sun/15 to-white pt-2">
         {reward.imageUrl ? (
           <img src={reward.imageUrl} alt={reward.title} className="h-20 w-20 rounded-2xl object-cover" />
         ) : (
-          <RewardArt seed={reward.imageSeed} size={80} />
+          <RewardArt seed={reward.imageSeed} size={76} />
         )}
       </div>
-      {/* текст — фиксированная высота, две строки описания */}
-      <div className="flex h-[62px] shrink-0 flex-col px-3 pt-2">
+      {/* цена по центру под картинкой */}
+      <div className="flex h-7 shrink-0 items-center justify-center">
+        <Chip className="bg-night px-2.5 py-1 text-[13px] text-sun">
+          <Coins size={12} /> {reward.cost}
+        </Chip>
+      </div>
+      {/* название и описание — фиксированная высота */}
+      <div className="flex h-[62px] shrink-0 flex-col px-3 pt-1">
         <p className="truncate text-[13px] font-black leading-tight text-ink">{reward.title}</p>
         <p className="mt-0.5 line-clamp-2 text-[11px] font-semibold leading-snug text-ink/50">{reward.description}</p>
       </div>
-      {/* нижняя строка всегда одинаковая: цена слева, действие справа */}
-      <div className="mt-auto flex h-12 shrink-0 items-center justify-between gap-2 px-3 pb-3">
-        <Chip className="shrink-0 bg-night px-2 py-1 text-sun">
-          <Coins size={12} /> {reward.cost}
-        </Chip>
-        <div className="flex h-8 min-w-[100px] items-center justify-end">
-          {requested ? (
-            <Chip className="whitespace-nowrap bg-sky/15 text-sky">
-              <Clock size={12} /> Ждёт маму
-            </Chip>
-          ) : (
-            <Button size="sm" variant={affordable ? 'primary' : 'secondary'} onClick={onPick} className="h-8 whitespace-nowrap">
-              Обменять
-            </Button>
-          )}
-        </div>
+      {/* действие по центру внизу */}
+      <div className="mt-auto flex h-11 shrink-0 items-center justify-center px-3 pb-3">
+        {requested ? (
+          <Chip className="whitespace-nowrap bg-sky/15 px-3 py-1.5 text-sky">
+            <Clock size={12} /> Ждёт маму
+          </Chip>
+        ) : (
+          <Button
+            size="sm"
+            variant={affordable ? 'primary' : 'secondary'}
+            onClick={onPick}
+            className="h-8 w-full whitespace-nowrap"
+          >
+            Обменять
+          </Button>
+        )}
       </div>
     </Card>
   );
