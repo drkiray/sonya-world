@@ -83,7 +83,7 @@ function EggShop() {
   const { toast } = useUi();
   const [selected, setSelected] = useState<Rarity | null>(null);
 
-  const available = RARITIES.filter((r) => state.pets.some((p) => p.source === 'catalog' && !p.variantOf && p.rarity === r));
+  const available = RARITIES;
 
   if (available.length === 0) {
     return (
@@ -103,7 +103,8 @@ function EggShop() {
         {available.map((rarity) => {
           const rc = RARITY_COLORS[rarity];
           const price = EGG_PRICE[rarity];
-          const count = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && p.rarity === rarity).length;
+          const lucky = rarity === 'Секретная' || rarity === 'Вечная';
+          const count = state.pets.filter((p) => p.source === 'catalog' && !p.variantOf && (lucky || p.rarity === rarity)).length;
           const affordable = state.profile.coins >= price;
           return (
             <Card key={rarity} className="flex flex-col items-center overflow-hidden p-3 text-center">
@@ -118,7 +119,7 @@ function EggShop() {
                 {RARITY_LABELS[rarity]}
               </Chip>
               <p className="mt-1 text-[10px] font-bold text-ink/40">
-                существ: {count} · рост {formatDuration(eggGrowMs(rarity))}
+                {lucky ? 'внутри любое существо' : `существ: ${count}`} · рост {formatDuration(eggGrowMs(rarity))}
               </p>
               <div className="mt-auto flex w-full items-center justify-between pt-2">
                 <Chip className="bg-night px-2 py-1 text-sun">
