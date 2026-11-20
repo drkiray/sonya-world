@@ -35,6 +35,7 @@ import type {
 } from '../types';
 import { LEGACY_RARITIES } from '../types';
 import { makeVariant } from './variants';
+import { deliverLetter } from './letters';
 
 export interface AppState {
   ready: boolean;
@@ -871,27 +872,9 @@ export async function updateProfile(patch: Partial<Profile>): Promise<void> {
   setState({ profile });
 }
 
-export async function saveTelegramSettings(botToken: string, chatId: string): Promise<void> {
-  const meta = { ...state.meta, telegramBotToken: botToken.trim(), telegramChatId: chatId.trim() };
-  await persistMeta(meta);
-  setState({ meta });
-}
-
-/** Отправка письма дяде Ярику через Telegram-бота мамы */
+/** Отправка письма дяде Ярику через почтовую форму. */
 export async function sendLetterToYarik(message: string): Promise<void> {
-  const text = message.trim();
-  if (!text) throw new BizError('Напиши хоть пару слов!');
-  const token = state.meta.telegramBotToken;
-  const chatId = state.meta.telegramChatId;
-  if (!token || !chatId) {
-    throw new BizError('Мама ещё не настроила отправку писем: Родительская панель → Настройки → Telegram-бот');
-  }
-  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text: `✉️ Письмо от Сони (Мир Сонечки):\n\n${text}` }),
-  });
-  if (!res.ok) throw new BizError('Не получилось отправить письмо. Попробуй позже.');
+  await deliverLetter(message, import.meta.env.VITE_LETTER_FORM_ID ?? '');
 
   // счётчик писем для достижений
   const meta = { ...state.meta, lettersSent: (state.meta.lettersSent ?? 0) + 1 };

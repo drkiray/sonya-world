@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "test:backup": "node --test tests/*.test.mjs"
+    "test:backup": "node --test tests/*.test.mjs",
+    "test:letters": "node --test tests/letters.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^0.454.0",

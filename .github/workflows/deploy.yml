@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
       - run: npm run test:backup
       - run: npm run build
+        env:
+          VITE_LETTER_FORM_ID: ${{ vars.LETTER_FORM_ID }}
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
