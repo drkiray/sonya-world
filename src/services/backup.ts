@@ -1,6 +1,6 @@
 import { idb, type StoreName } from './db';
 
-const BACKUP_STORES: StoreName[] = [
+export const BACKUP_STORES: StoreName[] = [
   'meta', 'profile', 'pets', 'collection', 'quests', 'submissions',
   'rewards', 'rewardRequests', 'transactions', 'achievements',
 ];

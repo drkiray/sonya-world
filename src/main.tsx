@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom';
 import App from './App';
 import { AppProvider } from './state/AppContext';
 import { initStore } from './services/store';
+import { startLocalBackupChecks } from './services/localBackup';
 import './index.css';
 
 async function bootstrap() {
@@ -17,6 +18,7 @@ async function bootstrap() {
       </HashRouter>
     </React.StrictMode>,
   );
+  startLocalBackupChecks();
 }
 
 bootstrap();

@@ -3,6 +3,7 @@ import { Bug, Download, FileUp, KeyRound, PencilLine, Send, Sparkles, Volume2, V
 import { useAppState, useUi } from '../../state/AppContext';
 import { changePin, importCatalog, resetDemoData, saveTelegramSettings, updateProfile } from '../../services/store';
 import { createProgressBackup } from '../../services/backup';
+import { checkLocalBackup, getLocalBackupStatus, listPhoneBackups, parseProgressBackup, readPhoneBackup, restoreFromJson, subscribeLocalBackupStatus } from '../../services/localBackup';
 import { parseCatalogJson } from '../../services/catalog';
 import { Button, Card, Chip, Modal } from '../../components/ui';
 
@@ -141,6 +142,8 @@ export default function ParentSettings() {
         </button>
       </Card>
 
+      <LocalBackupCard />
+
       <ImportModal open={showImport} onClose={() => setShowImport(false)} />
       <ChangePinModal open={showPin} onClose={() => setShowPin(false)} />
 
@@ -165,6 +168,78 @@ export default function ParentSettings() {
       </Modal>
     </div>
   );
+}
+
+function LocalBackupCard() {
+  const { toast } = useUi();
+  const [status, setStatus] = useState(getLocalBackupStatus);
+  const [files, setFiles] = useState<Array<{ name: string; date: Date }>>([]);
+  const [candidate, setCandidate] = useState<{ json: string; date: string; coins: number; pets: number } | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const refresh = () => {
+      setStatus(getLocalBackupStatus());
+      void listPhoneBackups().then(setFiles).catch(() => setFiles([]));
+    };
+    refresh();
+    return subscribeLocalBackupStatus(refresh);
+  }, []);
+
+  const prepare = async (read: () => Promise<string>) => {
+    try {
+      const json = await read();
+      const backup = parseProgressBackup(json);
+      setCandidate({ json, date: new Date(backup.exportedAt).toLocaleString('ru-RU'),
+        coins: Number(backup.stores.profile.find(row => row.id === 'main')?.coins ?? 0),
+        pets: backup.stores.pets.length });
+    } catch (error) {
+      toast(error instanceof Error ? error.message : 'Не удалось открыть копию', 'error');
+    }
+  };
+
+  return <Card className="p-4">
+    <p className="text-sm font-black text-ink">Автокопии на этом телефоне</p>
+    <p className="mt-1 text-xs font-semibold text-ink/60">
+      Игра сохраняет копию при первом открытии и затем раз в 7 дней. Эти файлы находятся внутри Chrome;
+      при очистке данных сайта или потере телефона они исчезнут.
+    </p>
+    <p className="mt-2 text-xs font-bold text-ink/70">
+      {status.busy ? 'Создаём копию…' : status.latest ? `Последняя копия: ${status.latest.toLocaleString('ru-RU')}` : 'Копий пока нет'}
+    </p>
+    {status.error && <p role="alert" className="mt-1 text-xs font-bold text-red-600">Ошибка: {status.error}</p>}
+    <Button size="sm" variant="secondary" className="mt-3 w-full" disabled={status.busy || busy} onClick={() => void checkLocalBackup()}>
+      Проверить копии
+    </Button>
+    {files.length > 0 && <div className="mt-3 space-y-2">
+      <p className="text-xs font-black text-ink">Восстановить из копии:</p>
+      {files.map(file => <button key={file.name} className="w-full rounded-xl bg-mist px-3 py-2 text-left text-sm font-bold text-grape"
+        onClick={() => void prepare(() => readPhoneBackup(file.name))}>{file.date.toLocaleString('ru-RU')}</button>)}
+    </div>}
+    <label className="mt-3 block cursor-pointer rounded-xl border-2 border-grape/20 px-3 py-3 text-center text-sm font-bold text-grape">
+      Выбрать файл копии
+      <input type="file" accept=".json,application/json" className="sr-only" onChange={event => {
+        const file = event.target.files?.[0];
+        if (file) void prepare(() => file.text());
+        event.target.value = '';
+      }} />
+    </label>
+    <Modal open={candidate !== null} onClose={() => setCandidate(null)} title="Восстановить прогресс?">
+      <p className="text-sm font-semibold text-ink/70">
+        Копия от {candidate?.date}: {candidate?.coins} монет, {candidate?.pets} питомцев.
+        Текущий прогресс будет заменён. Перед этим игра сохранит его страховочную копию.
+      </p>
+      <div className="mt-4 grid grid-cols-2 gap-2">
+        <Button variant="secondary" onClick={() => setCandidate(null)}>Отмена</Button>
+        <Button variant="danger" disabled={busy} onClick={async () => {
+          if (!candidate) return;
+          setBusy(true);
+          try { await restoreFromJson(candidate.json); window.location.reload(); }
+          catch (error) { toast(error instanceof Error ? error.message : 'Не удалось восстановить', 'error'); setBusy(false); }
+        }}>Восстановить</Button>
+      </div>
+    </Modal>
+  </Card>;
 }
 
 function ChangePinModal({ open, onClose }: { open: boolean; onClose: () => void }) {
