@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bug, Download, FileUp, KeyRound, PencilLine, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useAppState, useUi } from '../../state/AppContext';
 import { changePin, importCatalog, resetDemoData, saveTelegramSettings, updateProfile } from '../../services/store';
+import { createProgressBackup } from '../../services/backup';
 import { parseCatalogJson } from '../../services/catalog';
 import { Button, Card, Chip, Modal } from '../../components/ui';
 
@@ -18,6 +19,7 @@ export default function ParentSettings() {
   const [showImport, setShowImport] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
   const [showPin, setShowPin] = useState(false);
+  const [backupBusy, setBackupBusy] = useState(false);
 
   useEffect(() => {
     const onPrompt = (e: Event) => {
@@ -32,6 +34,26 @@ export default function ParentSettings() {
     if (!installEvt) return;
     await installEvt.prompt();
     setInstallEvt(null);
+  };
+
+  const downloadBackup = async () => {
+    setBackupBusy(true);
+    try {
+      const json = await createProgressBackup();
+      const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sonya-world-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      toast('Резервная копия скачана', 'success');
+    } catch {
+      toast('Не удалось создать копию. Попробуйте ещё раз.', 'error');
+    } finally {
+      setBackupBusy(false);
+    }
   };
 
   return (
@@ -63,6 +85,18 @@ export default function ParentSettings() {
           <FileUp className="text-grape" size={20} />
           <span className="flex-1 text-sm font-black text-ink">Импорт каталога питомцев</span>
           <span className="text-xs font-bold text-ink/40">JSON</span>
+        </button>
+
+        <button
+          className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5 disabled:opacity-50"
+          onClick={downloadBackup}
+          disabled={backupBusy}
+        >
+          <Download className="shrink-0 text-grape" size={20} />
+          <span className="flex-1">
+            <span className="block text-sm font-black text-ink">Скачать резервную копию</span>
+            <span className="block text-xs font-semibold text-ink/50">Питомцы, монеты и фото. Храните файл у себя.</span>
+          </span>
         </button>
 
         <button className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5" onClick={() => setShowPin(true)}>
