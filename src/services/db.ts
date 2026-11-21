@@ -89,6 +89,27 @@ export const idb = {
       t.onabort = () => reject(t.error);
     });
   },
+  /** Restore all stores in one transaction: failure aborts the whole replacement. */
+  async replaceAll(rows: Record<StoreName, { id: string }[]>): Promise<void> {
+    const db = await openDb();
+    return new Promise((resolve, reject) => {
+      const t = db.transaction(STORES, 'readwrite');
+      try {
+        for (const name of STORES) {
+          const store = t.objectStore(name);
+          store.clear();
+          for (const row of rows[name]) store.put(row);
+        }
+      } catch (error) {
+        t.abort();
+        reject(error);
+        return;
+      }
+      t.oncomplete = () => resolve();
+      t.onerror = () => reject(t.error);
+      t.onabort = () => reject(t.error);
+    });
+  },
 };
 
 export function uid(): string {
