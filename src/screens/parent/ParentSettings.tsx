@@ -3,6 +3,7 @@ import { Bug, Download, FileUp, KeyRound, PencilLine, Send, Sparkles, Volume2, V
 import { useAppState, useUi } from '../../state/AppContext';
 import { changePin, importCatalog, resetDemoData, saveTelegramSettings, updateProfile } from '../../services/store';
 import { createProgressBackup } from '../../services/backup';
+import { backupConfigured, checkBackup, downloadCloudBackup, getBackupStatus, requestBackupCode, subscribeBackupStatus, verifyBackupCode } from '../../services/backupCloud';
 import { parseCatalogJson } from '../../services/catalog';
 import { Button, Card, Chip, Modal } from '../../components/ui';
 
@@ -141,6 +142,8 @@ export default function ParentSettings() {
         </button>
       </Card>
 
+      {backupConfigured() && <CloudBackupCard />}
+
       <ImportModal open={showImport} onClose={() => setShowImport(false)} />
       <ChangePinModal open={showPin} onClose={() => setShowPin(false)} />
 
@@ -165,6 +168,67 @@ export default function ParentSettings() {
       </Modal>
     </div>
   );
+}
+
+function CloudBackupCard() {
+  const { toast } = useUi();
+  const [status, setStatus] = useState(getBackupStatus);
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => subscribeBackupStatus(() => setStatus(getBackupStatus())), []);
+
+  const run = async (action: () => Promise<void>) => {
+    setBusy(true);
+    try { await action(); }
+    catch (error) { toast(error instanceof Error ? error.message : 'Ошибка соединения', 'error'); }
+    finally { setBusy(false); }
+  };
+
+  const download = () => run(async () => {
+    const blob = await downloadCloudBackup();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `sonya-world-cloud-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  });
+
+  return <Card className="p-4">
+    <p className="text-sm font-black text-ink">Облачные копии прогресса</p>
+    {status.connected ? <>
+      <p className="mt-1 text-xs font-semibold text-ink/60">
+        {status.latest ? `Последняя копия: ${status.latest.toLocaleString('ru-RU')}` : 'Копий пока нет'}.
+        Новая копия отправится при открытии игры после 7 дней.
+      </p>
+      {status.error && <p role="alert" className="mt-2 text-xs font-bold text-red-600">Ошибка: {status.error}</p>}
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Button size="sm" disabled={busy || status.busy} onClick={() => run(() => checkBackup(true))}>
+          {status.busy ? 'Проверяем…' : 'Создать копию'}
+        </Button>
+        <Button size="sm" variant="secondary" disabled={busy || !status.latest} onClick={download}>Скачать копию</Button>
+      </div>
+    </> : <>
+      <p className="mt-1 text-xs font-semibold text-ink/60">Взрослому нужно один раз войти по коду из почты. После этого копии будут отправляться сами.</p>
+      {status.error && <p role="alert" className="mt-2 text-xs font-bold text-red-600">Ошибка: {status.error}</p>}
+      <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Почта взрослого"
+        className="mt-3 w-full rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm outline-none focus:border-grape" />
+      {codeSent && <input inputMode="numeric" value={code} onChange={e => setCode(e.target.value)} placeholder="Код из письма"
+        className="mt-2 w-full rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm outline-none focus:border-grape" />}
+      <Button size="sm" className="mt-2 w-full" disabled={busy || !email.trim() || (codeSent && !code.trim())}
+        onClick={() => run(async () => {
+          if (codeSent) { await verifyBackupCode(email, code); toast('Облачные копии подключены', 'success'); }
+          else { await requestBackupCode(email); setCodeSent(true); toast('Код отправлен на почту', 'success'); }
+        })}>
+        {busy ? 'Подождите…' : codeSent ? 'Подключить' : 'Получить код'}
+      </Button>
+    </>}
+  </Card>;
 }
 
 function ChangePinModal({ open, onClose }: { open: boolean; onClose: () => void }) {

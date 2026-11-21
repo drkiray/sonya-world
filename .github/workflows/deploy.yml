@@ -25,6 +25,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+        env:
+          VITE_BACKUP_SUPABASE_URL: ${{ vars.BACKUP_SUPABASE_URL }}
+          VITE_BACKUP_SUPABASE_ANON_KEY: ${{ vars.BACKUP_SUPABASE_ANON_KEY }}
       - uses: actions/configure-pages@v4
       - uses: actions/upload-pages-artifact@v3
         with:
