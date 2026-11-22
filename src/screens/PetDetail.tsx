@@ -264,7 +264,7 @@ export default function PetDetail() {
   );
 }
 
-/** Окошко письма дяде Ярику — отправляется через Telegram-бота (настраивает мама) */
+/** Окошко письма дяде Ярику — отправляется через почтовую форму. */
 function LetterModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const state = useAppState();
   const { toast } = useUi();
@@ -302,6 +302,7 @@ function LetterModal({ open, onClose }: { open: boolean; onClose: () => void }) 
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
+        maxLength={2000}
         rows={5}
         placeholder="Дядя Ярик, я хочу…"
         className="mt-3 w-full resize-none rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm font-semibold outline-none focus:border-grape"

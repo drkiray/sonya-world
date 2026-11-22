@@ -221,7 +221,7 @@ export interface AppMeta {
   seededAt: string;
   parentPin: string;
   schemaVersion: number;
-  /** Telegram-бот для писем дяде Ярику: токен и chat id (заполняет мама) */
+  /** Старые настройки Telegram: сохраняются для совместимости с уже установленной игрой. */
   telegramBotToken?: string;
   telegramChatId?: string;
   /** Сколько писем дяде Ярику отправила Соня */
