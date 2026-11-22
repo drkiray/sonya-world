@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bug, Download, FileUp, KeyRound, PencilLine, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
+import { Bug, Download, FileUp, KeyRound, PencilLine, RotateCw, Send, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useAppState, useUi } from '../../state/AppContext';
 import { changePin, importCatalog, resetDemoData, saveTelegramSettings, updateProfile } from '../../services/store';
 import { createProgressBackup } from '../../services/backup';
@@ -21,6 +21,7 @@ export default function ParentSettings() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [showPin, setShowPin] = useState(false);
   const [backupBusy, setBackupBusy] = useState(false);
+  const [updateBusy, setUpdateBusy] = useState(false);
 
   useEffect(() => {
     const onPrompt = (e: Event) => {
@@ -57,6 +58,31 @@ export default function ParentSettings() {
     }
   };
 
+  const updateGame = async () => {
+    if (!navigator.onLine) { toast('Нужен интернет для обновления', 'error'); return; }
+    setUpdateBusy(true);
+    try {
+      const registration = await navigator.serviceWorker?.getRegistration();
+      if (registration) {
+        let reloaded = false;
+        const reload = () => {
+          if (reloaded) return;
+          reloaded = true;
+          window.location.reload();
+        };
+        navigator.serviceWorker.addEventListener('controllerchange', reload, { once: true });
+        await registration.update();
+        registration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+        setTimeout(reload, 3000);
+      } else {
+        window.location.reload();
+      }
+    } catch {
+      setUpdateBusy(false);
+      toast('Не удалось проверить обновление. Попробуйте ещё раз.', 'error');
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card className="divide-y divide-ink/5">
@@ -81,6 +107,12 @@ export default function ParentSettings() {
             <Chip className="bg-sun/25 text-[#8A6100]">PWA</Chip>
           </button>
         )}
+
+        <button className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5 disabled:opacity-50"
+          onClick={updateGame} disabled={updateBusy}>
+          <RotateCw className="shrink-0 text-grape" size={20} />
+          <span className="flex-1 text-sm font-black text-ink">{updateBusy ? 'Проверяем обновление…' : 'Обновить игру'}</span>
+        </button>
 
         <button className="flex w-full items-center gap-3 p-4 text-left active:bg-ink/5" onClick={() => setShowImport(true)}>
           <FileUp className="text-grape" size={20} />
