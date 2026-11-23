@@ -14,6 +14,7 @@ create table if not exists public.owl_letters (
 
 alter table public.owl_letters enable row level security;
 revoke all on public.owl_letters from anon, authenticated;
+grant select, insert, update on public.owl_letters to service_role;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('owl-voice', 'owl-voice', false, 5000000, array['audio/ogg'])
