@@ -10,3 +10,9 @@ export async function mailboxProof(token: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', bytes);
   return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
 }
+
+export async function webhookSecret(token: string): Promise<string> {
+  const bytes = new TextEncoder().encode(`sonya-owl-webhook-v1:${token}`);
+  const digest = await crypto.subtle.digest('SHA-256', bytes);
+  return [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+}

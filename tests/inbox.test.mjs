@@ -5,7 +5,7 @@ import { build } from 'esbuild';
 const compiled = await build({ entryPoints: ['src/services/inbox.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
 const { parseInbox, nextUnread, makeMailboxProof, fetchInbox } = await import(`data:text/javascript;base64,${Buffer.from(compiled.outputFiles[0].text).toString('base64')}`);
 const serverCompiled = await build({ entryPoints: ['supabase/functions/_shared/mailbox.ts'], bundle: true, platform: 'node', format: 'esm', write: false });
-const { mailboxProof } = await import(`data:text/javascript;base64,${Buffer.from(serverCompiled.outputFiles[0].text).toString('base64')}`);
+const { mailboxProof, webhookSecret } = await import(`data:text/javascript;base64,${Buffer.from(serverCompiled.outputFiles[0].text).toString('base64')}`);
 
 test('accepts text and voice messages in chronological order', () => {
   const items = parseInbox([
@@ -32,4 +32,11 @@ test('fetches private inbox using a proof derived from the saved bot token', asy
   });
   assert.equal(header, proof);
   assert.equal(messages[0].text, 'Привет!');
+});
+
+test('uses a separate secret for Telegram webhook requests', async () => {
+  const token = 'local-bot-token';
+  const secret = await webhookSecret(token);
+  assert.match(secret, /^[a-f0-9]{64}$/);
+  assert.notEqual(secret, await mailboxProof(token));
 });

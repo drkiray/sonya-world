@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { selectBotMessages } from '../_shared/telegram.ts';
-import { equalSecrets, mailboxProof } from '../_shared/mailbox.ts';
+import { equalSecrets, mailboxProof, webhookSecret } from '../_shared/mailbox.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': 'https://drkiray.github.io',
@@ -28,15 +28,40 @@ Deno.serve(async (request: Request) => {
   const token = Deno.env.get('TELEGRAM_BOT_TOKEN');
   if (!token) return respond({ error: 'Mailbox unavailable' }, 503);
 
+  if (request.method === 'GET' && new URL(request.url).searchParams.get('setup') === '1') {
+    if (Deno.env.get('YARIK_TELEGRAM_ID')) return respond({ error: 'Setup closed' }, 403);
+    const url = Deno.env.get('SUPABASE_URL');
+    if (!url) return respond({ error: 'Mailbox unavailable' }, 503);
+    const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: `${url}/functions/v1/owl-mailbox`,
+        secret_token: await webhookSecret(token),
+        allowed_updates: ['message'], drop_pending_updates: false,
+      }),
+    });
+    const result = await response.json();
+    return respond(response.ok && result.ok ? { ok: true } : { error: 'Webhook setup failed' }, response.ok && result.ok ? 200 : 502);
+  }
+
   if (request.method === 'POST') {
-    const webhookSecret = Deno.env.get('TELEGRAM_WEBHOOK_SECRET') ?? '';
-    if (!webhookSecret || !equalSecrets(request.headers.get('X-Telegram-Bot-Api-Secret-Token') ?? '', webhookSecret)) {
+    if (!equalSecrets(request.headers.get('X-Telegram-Bot-Api-Secret-Token') ?? '', await webhookSecret(token))) {
       return respond({ error: 'Forbidden' }, 403);
     }
+    const update = await request.json();
+    const command = update?.message;
+    if (['/id', 'id'].includes(command?.text?.trim().toLowerCase()) && command?.chat?.type === 'private' &&
+        Number.isSafeInteger(command?.from?.id) && command.from.id === command.chat.id) {
+      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: command.chat.id, text: `Ваш Telegram ID: ${command.from.id}` }),
+      });
+      return respond({ ok: true });
+    }
     const senderId = Number(Deno.env.get('YARIK_TELEGRAM_ID'));
-    if (!Number.isSafeInteger(senderId)) return respond({ error: 'Sender unavailable' }, 503);
+    if (!Number.isSafeInteger(senderId) || senderId <= 0) return respond({ ok: true });
     try {
-      const messages = selectBotMessages([await request.json()], senderId);
+      const messages = selectBotMessages([update], senderId);
       if (messages.length === 0) return respond({ ok: true });
       const db = adminClient();
       for (const message of messages) {
