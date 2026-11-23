@@ -884,6 +884,14 @@ export async function sendLetterToYarik(message: string): Promise<void> {
   await evaluateAchievements();
 }
 
+/** Keeps the existing local bot token for private incoming owl mail. */
+export async function saveOwlMailboxToken(token: string): Promise<void> {
+  if (!/^\d+:[A-Za-z0-9_-]+$/.test(token.trim())) throw new BizError('Проверьте токен бота');
+  const meta = { ...state.meta, telegramBotToken: token.trim() };
+  await persistMeta(meta);
+  setState({ meta });
+}
+
 export async function verifyPin(pin: string): Promise<boolean> {
   return pin === state.meta.parentPin;
 }

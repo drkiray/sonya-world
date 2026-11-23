@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bug, Download, FileUp, KeyRound, PencilLine, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import { useAppState, useUi } from '../../state/AppContext';
-import { changePin, importCatalog, resetDemoData, updateProfile } from '../../services/store';
+import { changePin, importCatalog, resetDemoData, saveOwlMailboxToken, updateProfile } from '../../services/store';
 import { createProgressBackup } from '../../services/backup';
 import { checkLocalBackup, getLocalBackupStatus, listPhoneBackups, parseProgressBackup, readPhoneBackup, restoreFromJson, subscribeLocalBackupStatus } from '../../services/localBackup';
 import { parseCatalogJson } from '../../services/catalog';
@@ -164,6 +164,7 @@ export default function ParentSettings() {
       </Card>
 
       <LocalBackupCard />
+      <OwlMailboxSettings />
 
       <ImportModal open={showImport} onClose={() => setShowImport(false)} />
       <ChangePinModal open={showPin} onClose={() => setShowPin(false)} />
@@ -189,6 +190,29 @@ export default function ParentSettings() {
       </Modal>
     </div>
   );
+}
+
+function OwlMailboxSettings() {
+  const { meta } = useAppState();
+  const { toast } = useUi();
+  const [token, setToken] = useState('');
+  const [busy, setBusy] = useState(false);
+  return <Card className="p-4">
+    <p className="text-sm font-black text-ink">Письма от дяди Ярика</p>
+    <p className="mt-1 text-xs font-semibold text-ink/60">
+      {meta.telegramBotToken ? 'Связь с совой сохранена на этом телефоне.' : 'Для входящих писем нужен токен вашего Telegram-бота.'}
+      {' '}Сонечке Telegram открывать не нужно.
+    </p>
+    <input type="password" autoComplete="off" value={token} onChange={event => setToken(event.target.value)}
+      placeholder={meta.telegramBotToken ? 'Новый токен, если бот изменился' : 'Токен бота'}
+      className="mt-3 w-full rounded-2xl border-2 border-ink/10 bg-mist px-3 py-2.5 text-sm outline-none focus:border-grape" />
+    <Button size="sm" className="mt-2 w-full" disabled={busy || !token.trim()} onClick={async () => {
+      setBusy(true);
+      try { await saveOwlMailboxToken(token); setToken(''); toast('Связь с совой сохранена', 'success'); }
+      catch (error) { toast(error instanceof Error ? error.message : 'Не удалось сохранить', 'error'); }
+      finally { setBusy(false); }
+    }}>Сохранить токен</Button>
+  </Card>;
 }
 
 function LocalBackupCard() {

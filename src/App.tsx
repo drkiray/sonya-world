@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { BottomNav } from './components/BottomNav';
+import { OwlInbox } from './components/OwlInbox';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { useAppState } from './state/AppContext';
 
@@ -56,6 +57,7 @@ export default function App() {
         </Suspense>
       </ErrorBoundary>
       {!isParent && <BottomNav />}
+      {!isParent && <OwlInbox />}
     </div>
   );
 }
